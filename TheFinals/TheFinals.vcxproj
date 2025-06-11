@@ -1,0 +1,252 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>17.0</VCProjectVersion>
+    <Keyword>Win32Proj</Keyword>
+    <ProjectGuid>{af32a69a-deb5-4abd-b35b-1c9fe116f1dd}</ProjectGuid>
+    <RootNamespace>TheFinals</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <IncludePath>directxtk12/Inc;directxtk12\Src\Shaders\Compiled;$(IncludePath)</IncludePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <IncludePath>directxtk12/Inc;directxtk12\Src\Shaders\Compiled;$(IncludePath)</IncludePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <IncludePath>directxtk12/Inc;directxtk12\Src\Shaders\Compiled;$(IncludePath)</IncludePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <IncludePath>directxtk12/Inc;directxtk12\Src\Shaders\Compiled;$(IncludePath)</IncludePath>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <WarningLevel>Level4</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+    <FxCompile>
+      <ShaderModel>6.0</ShaderModel>
+    </FxCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level4</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+    <FxCompile>
+      <ShaderModel>6.0</ShaderModel>
+    </FxCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <WarningLevel>Level4</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+    <FxCompile>
+      <ShaderModel>6.0</ShaderModel>
+    </FxCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level4</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+    <FxCompile>
+      <ShaderModel>6.0</ShaderModel>
+    </FxCompile>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="directxtk12\Src\AlphaTestEffect.cpp" />
+    <ClCompile Include="directxtk12\Src\BasicEffect.cpp" />
+    <ClCompile Include="directxtk12\Src\BasicPostProcess.cpp" />
+    <ClCompile Include="directxtk12\Src\BinaryReader.cpp" />
+    <ClCompile Include="directxtk12\Src\BufferHelpers.cpp" />
+    <ClCompile Include="directxtk12\Src\CommonStates.cpp" />
+    <ClCompile Include="directxtk12\Src\DDSTextureLoader.cpp" />
+    <ClCompile Include="directxtk12\Src\DebugEffect.cpp" />
+    <ClCompile Include="directxtk12\Src\DescriptorHeap.cpp" />
+    <ClCompile Include="directxtk12\Src\DirectXHelpers.cpp" />
+    <ClCompile Include="directxtk12\Src\DualPostProcess.cpp" />
+    <ClCompile Include="directxtk12\Src\DualTextureEffect.cpp" />
+    <ClCompile Include="directxtk12\Src\EffectCommon.cpp" />
+    <ClCompile Include="directxtk12\Src\EffectFactory.cpp" />
+    <ClCompile Include="directxtk12\Src\EffectPipelineStateDescription.cpp" />
+    <ClCompile Include="directxtk12\Src\EffectTextureFactory.cpp" />
+    <ClCompile Include="directxtk12\Src\EnvironmentMapEffect.cpp" />
+    <ClCompile Include="directxtk12\Src\GamePad.cpp" />
+    <ClCompile Include="directxtk12\Src\GeometricPrimitive.cpp" />
+    <ClCompile Include="directxtk12\Src\Geometry.cpp" />
+    <ClCompile Include="directxtk12\Src\GraphicsMemory.cpp" />
+    <ClCompile Include="directxtk12\Src\Keyboard.cpp" />
+    <ClCompile Include="directxtk12\Src\LinearAllocator.cpp" />
+    <ClCompile Include="directxtk12\Src\Model.cpp" />
+    <ClCompile Include="directxtk12\Src\ModelLoadCMO.cpp" />
+    <ClCompile Include="directxtk12\Src\ModelLoadSDKMESH.cpp" />
+    <ClCompile Include="directxtk12\Src\ModelLoadVBO.cpp" />
+    <ClCompile Include="directxtk12\Src\Mouse.cpp" />
+    <ClCompile Include="directxtk12\Src\NormalMapEffect.cpp" />
+    <ClCompile Include="directxtk12\Src\PBREffect.cpp" />
+    <ClCompile Include="directxtk12\Src\PBREffectFactory.cpp" />
+    <ClCompile Include="directxtk12\Src\pch.cpp" />
+    <ClCompile Include="directxtk12\Src\PrimitiveBatch.cpp" />
+    <ClCompile Include="directxtk12\Src\ResourceUploadBatch.cpp" />
+    <ClCompile Include="directxtk12\Src\ScreenGrab.cpp" />
+    <ClCompile Include="directxtk12\Src\SimpleMath.cpp" />
+    <ClCompile Include="directxtk12\Src\SkinnedEffect.cpp" />
+    <ClCompile Include="directxtk12\Src\SpriteBatch.cpp" />
+    <ClCompile Include="directxtk12\Src\SpriteFont.cpp" />
+    <ClCompile Include="directxtk12\Src\ToneMapPostProcess.cpp" />
+    <ClCompile Include="directxtk12\Src\VertexTypes.cpp" />
+    <ClCompile Include="directxtk12\Src\WICTextureLoader.cpp" />
+    <ClCompile Include="dx12_helper.cpp" />
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="material.cpp" />
+    <ClCompile Include="render.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="directxtk12\Src\AlignedNew.h" />
+    <ClInclude Include="directxtk12\Src\Bezier.h" />
+    <ClInclude Include="directxtk12\Src\BinaryReader.h" />
+    <ClInclude Include="directxtk12\Src\CMO.h" />
+    <ClInclude Include="directxtk12\Src\d3dx12.h" />
+    <ClInclude Include="directxtk12\Src\DDS.h" />
+    <ClInclude Include="directxtk12\Src\DemandCreate.h" />
+    <ClInclude Include="directxtk12\Src\EffectCommon.h" />
+    <ClInclude Include="directxtk12\Src\Geometry.h" />
+    <ClInclude Include="directxtk12\Src\LinearAllocator.h" />
+    <ClInclude Include="directxtk12\Src\LoaderHelpers.h" />
+    <ClInclude Include="directxtk12\Src\pch.h" />
+    <ClInclude Include="directxtk12\Src\PlatformHelpers.h" />
+    <ClInclude Include="directxtk12\Src\SDKMesh.h" />
+    <ClInclude Include="directxtk12\Src\SharedResourcePool.h" />
+    <ClInclude Include="directxtk12\Src\vbo.h" />
+    <ClInclude Include="dx12_helper.h" />
+    <ClInclude Include="material.h" />
+    <ClInclude Include="render.h" />
+    <ClInclude Include="render_internal.h" />
+    <ClInclude Include="windows_internal.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="pixel_shader.ps.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+    </FxCompile>
+    <FxCompile Include="vertex_shader.vs.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
+    </FxCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="directxtk12\Src\TeapotData.inc" />
+    <None Include="material.rs.hlsli" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets" />
+</Project>
