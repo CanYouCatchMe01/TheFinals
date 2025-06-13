@@ -2,17 +2,28 @@
 #include "render.h"
 #include <thread>
 #include <bitset>
+#include "imui.h"
+#include "imgui/imgui_impl_win32.h"
 
-int client_width = 800;
-int client_height = 800;
+namespace game {
+    HWND hwnd = nullptr;
+    int client_width = 800;
+    int client_height = 800;
 
-int mouse_velocity_x = 0;
-int mouse_velocity_y = 0;
-float delta_time = 0.0f;
+    int mouse_velocity_x = 0;
+    int mouse_velocity_y = 0;
+    float delta_time = 0.0f;
 
-std::bitset<256> key_states;
+    std::bitset<256> key_states;
+}
+
+extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
+    if (ImGui_ImplWin32_WndProcHandler(hWnd, message, wParam, lParam)) {
+        return true;  // ImGui has handled the message
+    }
+
     switch (message) {
         case WM_DESTROY:
         {
@@ -20,25 +31,45 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
             return 0;
         }
         break;
+
         case WM_KEYDOWN:
-        {
-            key_states[wParam] = true;
-        }
+            game::key_states[wParam] = true;
         break;
         case WM_KEYUP:
-        {
-            key_states[wParam] = false;
-        }
+            game::key_states[wParam] = false;
         break;
+
+        // Mouse buttons
+        case WM_LBUTTONDOWN:
+            game::key_states[VK_LBUTTON] = true;
+            break;
+        case WM_LBUTTONUP:
+            game::key_states[VK_LBUTTON] = false;
+            break;
+
+        case WM_RBUTTONDOWN:
+            game::key_states[VK_RBUTTON] = true;
+            break;
+        case WM_RBUTTONUP:
+            game::key_states[VK_RBUTTON] = false;
+            break;
+
+        case WM_MBUTTONDOWN:
+            game::key_states[VK_MBUTTON] = true;
+            break;
+        case WM_MBUTTONUP:
+            game::key_states[VK_MBUTTON] = false;
+            break;
+
         case WM_SIZE:
         {
             RECT rect;
             GetClientRect(hWnd, &rect);
-            client_width = rect.right - rect.left;
-            client_height = rect.bottom - rect.top;
+            game::client_width = rect.right - rect.left;
+            game::client_height = rect.bottom - rect.top;
 
             if (render::enabled) {
-                render::resize(client_width, client_height);
+                render::resize(game::client_width, game::client_height);
             }
         }
         break;
@@ -49,8 +80,8 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
             if (raw_input.header.dwType == RIM_TYPEMOUSE) {
                 // Handle mouse input here
                 // For example, you can process raw_input.data.mouse
-                mouse_velocity_x += raw_input.data.mouse.lLastX;
-                mouse_velocity_y += raw_input.data.mouse.lLastY;
+                game::mouse_velocity_x += raw_input.data.mouse.lLastX;
+                game::mouse_velocity_y += raw_input.data.mouse.lLastY;
             }
         }
         break;
@@ -61,7 +92,7 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 
 void game_thread() {
     while (true) {
-        render::render(client_width, client_height);
+        render::render(game::client_width, game::client_height);
     }
 }
 
@@ -76,25 +107,25 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
     RegisterClass(&wc);
 
     //the windows size is with the top bar
-    RECT desired_rect = { 0, 0, client_width, client_height };
+    RECT desired_rect = { 0, 0, game::client_width, game::client_height };
     AdjustWindowRect(&desired_rect, WS_OVERLAPPEDWINDOW, false);
     int window_width = desired_rect.right - desired_rect.left;
     int window_height = desired_rect.bottom - desired_rect.top;
 
     // Create a window
-    HWND hwnd = CreateWindow(wc.lpszClassName, L"DirectX 12 Triangle", WS_OVERLAPPEDWINDOW,
+    game::hwnd = CreateWindow(wc.lpszClassName, L"DirectX 12 Triangle", WS_OVERLAPPEDWINDOW,
         CW_USEDEFAULT, CW_USEDEFAULT, window_width, window_height, nullptr, nullptr, hInstance, nullptr);
-    ShowWindow(hwnd, nCmdShow);
-
-    render::setup(client_width, client_height, hwnd);
+    ShowWindow(game::hwnd, nCmdShow);
 
     RAWINPUTDEVICE raw_input_device = {};
     raw_input_device.usUsagePage = 0x01; // Generic Desktop Controls
     raw_input_device.usUsage = 0x02; // Mouse
     raw_input_device.dwFlags = 0;
-    raw_input_device.hwndTarget = hwnd;
+    raw_input_device.hwndTarget = game::hwnd;
     BOOL ok = RegisterRawInputDevices(&raw_input_device, 1, sizeof(RAWINPUTDEVICE));
 
+    render::setup(game::client_width, game::client_height, game::hwnd);
+    imui::setup();
     //std::thread t1(game_thread);
 
     using Clock = std::chrono::high_resolution_clock;
@@ -102,8 +133,8 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
 
     bool running = true;
     while (running) {
-        mouse_velocity_x = 0;
-        mouse_velocity_y = 0;
+        game::mouse_velocity_x = 0;
+        game::mouse_velocity_y = 0;
 
         MSG msg = {};
         while (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE)) {
@@ -118,8 +149,8 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
         std::chrono::duration<float> deltaTime = now - lastTime;
         lastTime = now;
 
-        delta_time = deltaTime.count();
+        game::delta_time = deltaTime.count();
 
-        render::render(client_width, client_height);
+        render::render(game::client_width, game::client_height);
     }
 }

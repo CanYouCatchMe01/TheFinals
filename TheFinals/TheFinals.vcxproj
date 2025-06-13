@@ -201,9 +201,18 @@
     <ClCompile Include="directxtk12\Src\ToneMapPostProcess.cpp" />
     <ClCompile Include="directxtk12\Src\VertexTypes.cpp" />
     <ClCompile Include="directxtk12\Src\WICTextureLoader.cpp" />
+    <ClCompile Include="dx12_heap_allocator.cpp" />
     <ClCompile Include="dx12_helper.cpp" />
+    <ClCompile Include="imgui\imgui.cpp" />
+    <ClCompile Include="imgui\imgui_demo.cpp" />
+    <ClCompile Include="imgui\imgui_draw.cpp" />
+    <ClCompile Include="imgui\imgui_impl_dx12.cpp" />
+    <ClCompile Include="imgui\imgui_impl_win32.cpp" />
+    <ClCompile Include="imgui\imgui_tables.cpp" />
+    <ClCompile Include="imgui\imgui_widgets.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="material.cpp" />
+    <ClCompile Include="imui.cpp" />
     <ClCompile Include="render.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -223,8 +232,19 @@
     <ClInclude Include="directxtk12\Src\SDKMesh.h" />
     <ClInclude Include="directxtk12\Src\SharedResourcePool.h" />
     <ClInclude Include="directxtk12\Src\vbo.h" />
+    <ClInclude Include="dx12_heap_allocator.h" />
     <ClInclude Include="dx12_helper.h" />
+    <ClInclude Include="game.h" />
+    <ClInclude Include="imgui\imconfig.h" />
+    <ClInclude Include="imgui\imgui.h" />
+    <ClInclude Include="imgui\imgui_impl_dx12.h" />
+    <ClInclude Include="imgui\imgui_impl_win32.h" />
+    <ClInclude Include="imgui\imgui_internal.h" />
+    <ClInclude Include="imgui\imstb_rectpack.h" />
+    <ClInclude Include="imgui\imstb_textedit.h" />
+    <ClInclude Include="imgui\imstb_truetype.h" />
     <ClInclude Include="material.h" />
+    <ClInclude Include="imui.h" />
     <ClInclude Include="render.h" />
     <ClInclude Include="render_internal.h" />
     <ClInclude Include="windows_internal.h" />

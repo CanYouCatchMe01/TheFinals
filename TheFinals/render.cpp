@@ -14,13 +14,11 @@
 #include <filesystem>
 #include "renderdoc_app.h"
 #include <bitset>
+#include "dx12_heap_allocator.h"
+#include "game.h"
+#include "imui.h"
 
 #pragma comment(lib, "dxgi.lib")
-
-extern int mouse_velocity_x;
-extern int mouse_velocity_y;
-extern float delta_time;
-extern std::bitset<256> key_states;
 
 namespace render {
     struct Vertex {
@@ -57,6 +55,8 @@ namespace render {
     ID3D12DescriptorHeap *rtv_heap = nullptr;
     ID3D12DescriptorHeap *cbv_srv_uav_heap = nullptr;
     ID3D12DescriptorHeap *dsv_heap = nullptr;
+
+    std::vector<bool> cbv_srv_uav_heap_allocator;
 
     Model cube_model = {};
     ID3D12Resource *vertex_buffer = nullptr; //fast. GPU access only
@@ -276,9 +276,13 @@ namespace render {
         rtv_heap_desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
         hr = device->CreateDescriptorHeap(&rtv_heap_desc, IID_PPV_ARGS(&rtv_heap));
 
+        const unsigned int cbv_srv_uav_heap_size = 1000;
+
+        cbv_srv_uav_heap_allocator.resize(cbv_srv_uav_heap_size, false);
+
         //store extra data for texture to use in shaders
         D3D12_DESCRIPTOR_HEAP_DESC cbv_srv_uav_heap_desc = {};
-        cbv_srv_uav_heap_desc.NumDescriptors = 1;
+        cbv_srv_uav_heap_desc.NumDescriptors = cbv_srv_uav_heap_size;
         cbv_srv_uav_heap_desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
         cbv_srv_uav_heap_desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
         hr = device->CreateDescriptorHeap(&cbv_srv_uav_heap_desc, IID_PPV_ARGS(&cbv_srv_uav_heap));
@@ -343,7 +347,10 @@ namespace render {
             dds_data,
             subresources
         );
-        D3D12_CPU_DESCRIPTOR_HANDLE cbv_srv_uav_handle(cbv_srv_uav_heap->GetCPUDescriptorHandleForHeapStart());
+
+        size_t tex_alloc_pos = dx12_heap_allocator::malloc(cbv_srv_uav_heap_allocator, 1);
+        D3D12_CPU_DESCRIPTOR_HANDLE cbv_srv_uav_handle = cbv_srv_uav_heap->GetCPUDescriptorHandleForHeapStart();
+        cbv_srv_uav_handle.ptr += tex_alloc_pos * device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
         device->CreateShaderResourceView(texture_resource, nullptr, cbv_srv_uav_handle);
 
         //create vertex and index buffer
@@ -568,25 +575,25 @@ namespace render {
 
             enabled = true;
 
-#if 1
-            RECT desktop;
-            GetWindowRect(GetDesktopWindow(), &desktop);
-            int width = desktop.right;
-            int height = desktop.bottom;
-
-            SetWindowLongPtr(hwnd, GWL_STYLE, WS_POPUP);
-            SetWindowPos(hwnd, HWND_TOP,
-                0, 0, width, height,
-                SWP_FRAMECHANGED | SWP_NOOWNERZORDER | SWP_NOZORDER | SWP_SHOWWINDOW);
-#else
-
-            // fullscreen window style
-            SetWindowLongPtr(hwnd, GWL_STYLE, 0);
-            SetWindowLongPtr(hwnd, GWL_EXSTYLE, WS_EX_TOPMOST);
-
-            SetWindowPos(hwnd, HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
-            ShowWindow(hwnd, SW_SHOWMAXIMIZED);
-#endif
+//#if 1
+//            RECT desktop;
+//            GetWindowRect(GetDesktopWindow(), &desktop);
+//            int width = desktop.right;
+//            int height = desktop.bottom;
+//
+//            SetWindowLongPtr(hwnd, GWL_STYLE, WS_POPUP);
+//            SetWindowPos(hwnd, HWND_TOP,
+//                0, 0, width, height,
+//                SWP_FRAMECHANGED | SWP_NOOWNERZORDER | SWP_NOZORDER | SWP_SHOWWINDOW);
+//#else
+//
+//            // fullscreen window style
+//            SetWindowLongPtr(hwnd, GWL_STYLE, 0);
+//            SetWindowLongPtr(hwnd, GWL_EXSTYLE, WS_EX_TOPMOST);
+//
+//            SetWindowPos(hwnd, HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
+//            ShowWindow(hwnd, SW_SHOWMAXIMIZED);
+//#endif
 
 //#if 1
 //            // Original style for normal windowed mode
@@ -654,6 +661,29 @@ namespace render {
     }
 
     void render(unsigned int width, unsigned int height) {
+
+        if (game::key_states[VK_RBUTTON]) {
+            // Get the client rect (in client coordinates)
+            RECT clientRect;
+            GetClientRect(game::hwnd, &clientRect);
+
+            // Calculate the center of the client area
+            int centerX = (clientRect.right - clientRect.left) / 2;
+            int centerY = (clientRect.bottom - clientRect.top) / 2;
+
+            // Convert the center point to screen coordinates
+            POINT pt = { centerX, centerY };
+            ClientToScreen(game::hwnd, &pt);
+
+            // Move the cursor to the center of the client area
+            SetCursorPos(pt.x, pt.y);
+
+            while (ShowCursor(FALSE) >= 0);
+        } else {
+            while (ShowCursor(TRUE) < 0);
+        }
+
+
         // Record commands to draw a triangle
         HRESULT hr = command_allocator->Reset();
         hr = command_list->Reset(command_allocator, nullptr);
@@ -689,19 +719,19 @@ namespace render {
         }
         {
             DirectX::XMFLOAT2 cam_velocity = DirectX::XMFLOAT2(0, 0);
-            if (key_states['D']) cam_velocity.x += 1.0f;
-            if (key_states['A']) cam_velocity.x -= 1.0f;
-            if (key_states['W']) cam_velocity.y += 1.0f;
-            if (key_states['S']) cam_velocity.y -= 1.0f;
+            if (game::key_states['D']) cam_velocity.x += 1.0f;
+            if (game::key_states['A']) cam_velocity.x -= 1.0f;
+            if (game::key_states['W']) cam_velocity.y += 1.0f;
+            if (game::key_states['S']) cam_velocity.y -= 1.0f;
 
-            float move_speed = 5.0f * delta_time;
+            float move_speed = 5.0f * game::delta_time;
             cam_velocity.x *= move_speed;
             cam_velocity.y *= move_speed;
 
             float rotation_speed = 0.01f;
 
-            float mouse_velocity_speed_x = float(mouse_velocity_x) * rotation_speed;
-            float mouse_velocity_speed_y = float(mouse_velocity_y) * rotation_speed;
+            float mouse_velocity_speed_x = game::key_states[VK_RBUTTON] ? float(game::mouse_velocity_x) * rotation_speed : 0.0f;
+            float mouse_velocity_speed_y = game::key_states[VK_RBUTTON] ? float(game::mouse_velocity_y) * rotation_speed : 0.0f;
 
             DirectX::XMVECTOR rot_x = DirectX::XMQuaternionRotationAxis(DirectX::XMVectorSet(0, 1, 0, 0), mouse_velocity_speed_x);
             DirectX::XMVECTOR rot_y = DirectX::XMQuaternionRotationAxis(DirectX::XMVectorSet(1, 0, 0, 0), mouse_velocity_speed_y);
@@ -808,6 +838,8 @@ namespace render {
         command_list->IASetIndexBuffer(&index_buffer_view);
 
         command_list->DrawIndexedInstanced(cube_model.indicies.size(), 1, 0, 0, 0);
+
+        imui::render();
 
         {
             D3D12_RESOURCE_BARRIER barrier = {};
