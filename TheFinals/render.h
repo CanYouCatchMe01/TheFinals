@@ -16,7 +16,6 @@ namespace render {
     extern ID3D12GraphicsCommandList *command_list;
 
     extern ID3D12DescriptorHeap *cbv_srv_uav_heap;
-    extern std::vector<bool> cbv_srv_uav_heap_allocator;
 
     void setup(unsigned int width, unsigned int height, HWND hwnd);
     void renderdoc_setup();

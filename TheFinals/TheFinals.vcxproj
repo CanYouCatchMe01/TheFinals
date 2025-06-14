@@ -201,7 +201,6 @@
     <ClCompile Include="directxtk12\Src\ToneMapPostProcess.cpp" />
     <ClCompile Include="directxtk12\Src\VertexTypes.cpp" />
     <ClCompile Include="directxtk12\Src\WICTextureLoader.cpp" />
-    <ClCompile Include="dx12_heap_allocator.cpp" />
     <ClCompile Include="dx12_helper.cpp" />
     <ClCompile Include="imgui\imgui.cpp" />
     <ClCompile Include="imgui\imgui_demo.cpp" />
@@ -232,7 +231,6 @@
     <ClInclude Include="directxtk12\Src\SDKMesh.h" />
     <ClInclude Include="directxtk12\Src\SharedResourcePool.h" />
     <ClInclude Include="directxtk12\Src\vbo.h" />
-    <ClInclude Include="dx12_heap_allocator.h" />
     <ClInclude Include="dx12_helper.h" />
     <ClInclude Include="game.h" />
     <ClInclude Include="imgui\imconfig.h" />
@@ -247,6 +245,7 @@
     <ClInclude Include="imui.h" />
     <ClInclude Include="render.h" />
     <ClInclude Include="render_internal.h" />
+    <ClInclude Include="static_srv.h" />
     <ClInclude Include="windows_internal.h" />
   </ItemGroup>
   <ItemGroup>

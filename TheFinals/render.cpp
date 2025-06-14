@@ -14,9 +14,9 @@
 #include <filesystem>
 #include "renderdoc_app.h"
 #include <bitset>
-#include "dx12_heap_allocator.h"
 #include "game.h"
 #include "imui.h"
+#include "static_srv.h"
 
 #pragma comment(lib, "dxgi.lib")
 
@@ -55,8 +55,6 @@ namespace render {
     ID3D12DescriptorHeap *rtv_heap = nullptr;
     ID3D12DescriptorHeap *cbv_srv_uav_heap = nullptr;
     ID3D12DescriptorHeap *dsv_heap = nullptr;
-
-    std::vector<bool> cbv_srv_uav_heap_allocator;
 
     Model cube_model = {};
     ID3D12Resource *vertex_buffer = nullptr; //fast. GPU access only
@@ -276,13 +274,9 @@ namespace render {
         rtv_heap_desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
         hr = device->CreateDescriptorHeap(&rtv_heap_desc, IID_PPV_ARGS(&rtv_heap));
 
-        const unsigned int cbv_srv_uav_heap_size = 1000;
-
-        cbv_srv_uav_heap_allocator.resize(cbv_srv_uav_heap_size, false);
-
         //store extra data for texture to use in shaders
         D3D12_DESCRIPTOR_HEAP_DESC cbv_srv_uav_heap_desc = {};
-        cbv_srv_uav_heap_desc.NumDescriptors = cbv_srv_uav_heap_size;
+        cbv_srv_uav_heap_desc.NumDescriptors = STATIC_SRV::COUNT;
         cbv_srv_uav_heap_desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
         cbv_srv_uav_heap_desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
         hr = device->CreateDescriptorHeap(&cbv_srv_uav_heap_desc, IID_PPV_ARGS(&cbv_srv_uav_heap));
@@ -348,9 +342,8 @@ namespace render {
             subresources
         );
 
-        size_t tex_alloc_pos = dx12_heap_allocator::malloc(cbv_srv_uav_heap_allocator, 1);
         D3D12_CPU_DESCRIPTOR_HANDLE cbv_srv_uav_handle = cbv_srv_uav_heap->GetCPUDescriptorHandleForHeapStart();
-        cbv_srv_uav_handle.ptr += tex_alloc_pos * device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+        cbv_srv_uav_handle.ptr += render::STATIC_SRV::MAIN_TEXTURE * device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
         device->CreateShaderResourceView(texture_resource, nullptr, cbv_srv_uav_handle);
 
         //create vertex and index buffer

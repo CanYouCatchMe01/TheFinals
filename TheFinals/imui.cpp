@@ -3,12 +3,15 @@
 #include "imgui/imgui_impl_win32.h"
 #include "imgui/imgui_impl_dx12.h"
 #include "render.h"
-#include "dx12_heap_allocator.h"
 #include "game.h"
+#include "static_srv.h"
 
 namespace imui {
+    std::vector<unsigned int> free_srv_indexes;
+
     void SrvDescriptorAllocFn(ImGui_ImplDX12_InitInfo *info, D3D12_CPU_DESCRIPTOR_HANDLE *out_cpu_desc_handle, D3D12_GPU_DESCRIPTOR_HANDLE *out_gpu_desc_handle) {
-        size_t srv_allocated_pos = dx12_heap_allocator::malloc(render::cbv_srv_uav_heap_allocator, 1);
+        size_t srv_allocated_pos = render::STATIC_SRV::IMGUI_SRV + free_srv_indexes.back();
+        free_srv_indexes.pop_back();
 
         const UINT increment_srv = render::device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
         {
@@ -27,10 +30,15 @@ namespace imui {
         const UINT increment_srv = render::device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
         size_t srv_allocated_pos = (size_t)((cpu_desc_handle.ptr - render::cbv_srv_uav_heap->GetCPUDescriptorHandleForHeapStart().ptr) / increment_srv);
-        dx12_heap_allocator::free(render::cbv_srv_uav_heap_allocator, srv_allocated_pos, 1);
+        free_srv_indexes.push_back(srv_allocated_pos - render::STATIC_SRV::IMGUI_SRV);
     }
 
     void setup() {
+        free_srv_indexes.resize(IMGUI_MAX_SRV);
+        for (size_t i = 0; i < IMGUI_MAX_SRV; i++) {
+            free_srv_indexes[i] = i;
+        }
+
         ImGui::CreateContext();
         ImGuiIO &io = ImGui::GetIO();
         io.Fonts->AddFontDefault();
