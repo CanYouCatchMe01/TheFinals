@@ -400,4 +400,9 @@ FodyWeavers.xsd
 # JetBrains Rider
 *.sln.iml
 
+# obj models
 !TheFinals/*.obj
+
+# Dear ImGui artifacts
+imgui.ini
+imgui*.ini
