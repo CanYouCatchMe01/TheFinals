@@ -88,8 +88,8 @@ namespace material {
 
     void setup() {
 
-        std::vector<char> vs_shader = read_file("vertex_shader.vs.cso");
-        std::vector<char> ps_shader = read_file("pixel_shader.ps.cso");
+        std::vector<char> vs_shader = read_file("Shaders/vertex_shader.vs.cso");
+        std::vector<char> ps_shader = read_file("Shaders/pixel_shader.ps.cso");
 
         HRESULT hr = render::device->CreateRootSignature(0, ps_shader.data(), ps_shader.size(), IID_PPV_ARGS(&root_signature));
 

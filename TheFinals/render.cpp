@@ -326,7 +326,7 @@ namespace render {
         create_depth_buffer(width, height);
         material::setup();
 
-        cube_model = load_model_from_obj("cube2.obj");
+        cube_model = load_model_from_obj("Assets/cube2.obj");
         ID3D12Resource *vertex_buffer_upload = nullptr; //slow. CPU and GPU access
         ID3D12Resource *index_buffer_upload = nullptr; //slow. CPU and GPU access
         ID3D12Resource *texture_resource = nullptr; //fast. GPU access only
@@ -336,7 +336,7 @@ namespace render {
         std::vector<D3D12_SUBRESOURCE_DATA> subresources;
         DirectX::LoadDDSTextureFromFile(
             device,
-            L"brick512.dds",
+            L"Assets/brick512.dds",
             &texture_resource, //create black texture, we will upload its data later
             dds_data,
             subresources
