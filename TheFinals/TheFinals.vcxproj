@@ -135,6 +135,7 @@
     <ClCompile Include="directxtk12\Src\VertexTypes.cpp" />
     <ClCompile Include="directxtk12\Src\WICTextureLoader.cpp" />
     <ClCompile Include="dx12_helper.cpp" />
+    <ClCompile Include="flecs\flecs.c" />
     <ClCompile Include="imgui\imgui.cpp" />
     <ClCompile Include="imgui\imgui_demo.cpp" />
     <ClCompile Include="imgui\imgui_draw.cpp" />
@@ -147,6 +148,7 @@
     <ClCompile Include="imui.cpp" />
     <ClCompile Include="physics.cpp" />
     <ClCompile Include="render.cpp" />
+    <ClCompile Include="scene.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="directxtk12\Src\AlignedNew.h" />
@@ -166,6 +168,7 @@
     <ClInclude Include="directxtk12\Src\SharedResourcePool.h" />
     <ClInclude Include="directxtk12\Src\vbo.h" />
     <ClInclude Include="dx12_helper.h" />
+    <ClInclude Include="flecs\flecs.h" />
     <ClInclude Include="game.h" />
     <ClInclude Include="imgui\imconfig.h" />
     <ClInclude Include="imgui\imgui.h" />
@@ -180,6 +183,7 @@
     <ClInclude Include="physics.h" />
     <ClInclude Include="render.h" />
     <ClInclude Include="render_internal.h" />
+    <ClInclude Include="scene.h" />
     <ClInclude Include="static_srv.h" />
     <ClInclude Include="windows_internal.h" />
   </ItemGroup>

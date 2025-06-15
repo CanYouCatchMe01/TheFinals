@@ -5,6 +5,7 @@
 #include "imui.h"
 #include "imgui/imgui_impl_win32.h"
 #include "physics.h"
+#include "scene.h"
 
 namespace game {
     HWND hwnd = nullptr;
@@ -128,6 +129,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
     render::setup(game::client_width, game::client_height, game::hwnd);
     imui::setup();
     physics::setup();
+    scene::setup();
 
     //std::thread t1(game_thread);
 
