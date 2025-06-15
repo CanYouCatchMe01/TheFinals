@@ -186,6 +186,9 @@
     <ClCompile Include="imui.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="physics.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="render.h">
@@ -282,6 +285,9 @@
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="static_srv.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="physics.h">
       <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>

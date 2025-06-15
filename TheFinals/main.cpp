@@ -4,6 +4,7 @@
 #include <bitset>
 #include "imui.h"
 #include "imgui/imgui_impl_win32.h"
+#include "physics.h"
 
 namespace game {
     HWND hwnd = nullptr;
@@ -126,6 +127,8 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
 
     render::setup(game::client_width, game::client_height, game::hwnd);
     imui::setup();
+    physics::setup();
+
     //std::thread t1(game_thread);
 
     using Clock = std::chrono::high_resolution_clock;

@@ -1,5 +1,12 @@
-#define D3D_DEBUG 2 //0=None, 1=DX12Debug, 2=RenderDoc
-#define D3D_DEBUG_BREAK 1 //0=off, 1=on
+#define D3D_DEBUG 0 //0=None, 1=DX12Debug, 2=RenderDoc
+//#define D3D_DEBUG_BREAK
+
+#if D3D_DEBUG != 0
+#pragma message("WARNING: DX12 DEBUG ENABLED, DO NOT COMMIT LIKE THIS!")
+#endif
+#ifdef D3D_DEBUG_BREAK
+#pragma message("WARNING: DX12 BREAK ENABLED, DO NOT COMMIT LIKE THIS!")
+#endif
 
 #include "render.h"
 #include "render_internal.h"
@@ -223,9 +230,8 @@ namespace render {
     }
 
     void setup(unsigned int width, unsigned int height, HWND hwnd) {
-#if D3D_DEBUG_BREAK == 1
+#ifdef D3D_DEBUG_BREAK
     {
-#pragma message("WARNING: DX12 DEBUG ENABLED, CAN BE SLOW")
         ID3D12Debug1 *debug_controller1 = nullptr;
         if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debug_controller1)))) {
             debug_controller1->EnableDebugLayer();
@@ -240,7 +246,6 @@ namespace render {
 
 #if D3D_DEBUG == 1
         {
-#pragma message("WARNING: DX12 DEBUG ENABLED, CAN BE SLOW")
             ID3D12InfoQueue *infoQueue = nullptr;
             if (SUCCEEDED(device->QueryInterface(__uuidof(ID3D12InfoQueue), (void **)&infoQueue))) {
                 infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR, TRUE);

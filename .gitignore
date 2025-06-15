@@ -406,3 +406,6 @@ FodyWeavers.xsd
 # Dear ImGui artifacts
 imgui.ini
 imgui*.ini
+
+!TheFinals/physx/
+!TheFinals/physx/**/
