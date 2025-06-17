@@ -112,6 +112,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
     game::hwnd = CreateWindow(wc.lpszClassName, L"DirectX 12 Triangle", WS_OVERLAPPEDWINDOW,
         CW_USEDEFAULT, CW_USEDEFAULT, window_width, window_height, nullptr, nullptr, hInstance, nullptr);
     ShowWindow(game::hwnd, nCmdShow);
+    should_resize = false; //dont need to resize the first one. we have not created the render yet
 
     RAWINPUTDEVICE raw_input_device = {};
     raw_input_device.usUsagePage = 0x01; // Generic Desktop Controls

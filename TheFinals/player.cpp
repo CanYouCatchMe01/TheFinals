@@ -7,6 +7,7 @@
 #include "game.h"
 #include <algorithm>
 #include "physics.h"
+#include <cmath>
 
 namespace player {
     void update(scene::Scene &scene) {
@@ -38,15 +39,16 @@ namespace player {
             float mouse_velocity_speed_y = game::key_states[VK_RBUTTON] ? float(game::mouse_velocity_y) * rotation_speed : 0.0f;
 
             p.head_rotation_x += mouse_velocity_speed_y;
-            p.head_rotation_x = std::clamp(p.head_rotation_x, -DirectX::XM_PIDIV2, DirectX::XM_PIDIV2);
+            p.head_rotation_x = std::clamp(p.head_rotation_x, -DirectX::XM_PIDIV2, DirectX::XM_PIDIV2); //clamp up and down rotation
 
-            DirectX::XMVECTOR rot_y = DirectX::XMQuaternionRotationAxis(DirectX::XMVectorSet(0, 1, 0, 0), mouse_velocity_speed_x);
-            DirectX::XMVECTOR cam_rot = DirectX::XMLoadFloat4(&t.rotation);
-            cam_rot = DirectX::XMQuaternionMultiply(cam_rot, rot_y);
-            DirectX::XMStoreFloat4(&t.rotation, cam_rot);
+            p.head_rotation_y += mouse_velocity_speed_x;
+            p.head_rotation_y = std::fmod(p.head_rotation_y, DirectX::XM_2PI); //makes so there are not very large values
 
-            //float y_velocity = p.velocity.y + 9.81f * game::delta_time; // Gravity
-            float y_velocity = 0.0f; // Gravity
+            DirectX::XMVECTOR quat_rot_y = DirectX::XMQuaternionRotationAxis(DirectX::XMVectorSet(0, 1, 0, 0), p.head_rotation_y);
+            DirectX::XMStoreFloat4(&t.rotation, quat_rot_y); //just set
+
+            float y_velocity = p.velocity.y - 9.81f * game::delta_time; // Gravity
+            //float y_velocity = 0.0f; // Gravity
 
             DirectX::XMFLOAT2 character_velocity = DirectX::XMFLOAT2(0, 0);
             if (game::key_states['D']) character_velocity.x += 1.0f;
@@ -58,14 +60,14 @@ namespace player {
             character_velocity.x *= move_speed;
             character_velocity.y *= move_speed;
 
-            DirectX::XMVECTOR cam_right = DirectX::XMVector3Rotate(DirectX::XMVectorSet(1, 0, 0, 0), cam_rot);
+            DirectX::XMVECTOR cam_right = DirectX::XMVector3Rotate(DirectX::XMVectorSet(1, 0, 0, 0), quat_rot_y);
             cam_right = DirectX::XMVectorMultiply(cam_right, DirectX::XMVectorSet(character_velocity.x, character_velocity.x, character_velocity.x, 0));
-            DirectX::XMVECTOR cam_forward = DirectX::XMVector3Rotate(DirectX::XMVectorSet(0, 0, 1, 0), cam_rot);
+            DirectX::XMVECTOR cam_forward = DirectX::XMVector3Rotate(DirectX::XMVectorSet(0, 0, 1, 0), quat_rot_y);
             cam_forward = DirectX::XMVectorMultiply(cam_forward, DirectX::XMVectorSet(character_velocity.y, character_velocity.y, character_velocity.y, 0));
 
             physx::PxVec3 disp(
                 DirectX::XMVectorGetX(cam_right) + DirectX::XMVectorGetX(cam_forward),
-                y_velocity,
+                y_velocity * game::delta_time,
                 DirectX::XMVectorGetZ(cam_right) + DirectX::XMVectorGetZ(cam_forward));
 
             physx::PxControllerCollisionFlags collision_flags = controller.controller->move(disp, 0.0, game::delta_time, physx::PxControllerFilters());
@@ -99,16 +101,15 @@ namespace player {
             camera::Camera &camera = camera_entity.get_mut<camera::Camera>();
 
             DirectX::XMMATRIX player_matrix = DirectX::XMMatrixTranslation(player_transform.position.x, player_transform.position.y, player_transform.position.z);
-            //DirectX::XMMATRIX head_matrix = player_matrix * DirectX::XMMatrixTranslation(0, player_player.head_height, 0);
-            DirectX::XMMATRIX head_matrix = player_matrix;
+            DirectX::XMMATRIX head_matrix = player_matrix * DirectX::XMMatrixTranslation(0, player_player.head_height, 0);
+            //DirectX::XMMATRIX head_matrix = player_matrix;
 
             DirectX::XMVECTOR rot_x = DirectX::XMQuaternionRotationAxis(DirectX::XMVectorSet(1, 0, 0, 0), player_player.head_rotation_x);
-            DirectX::XMVECTOR rot_y = DirectX::XMLoadFloat4(&player_transform.rotation);
+            DirectX::XMVECTOR rot_y = DirectX::XMQuaternionRotationAxis(DirectX::XMVectorSet(0, 1, 0, 0), player_player.head_rotation_y);
             DirectX::XMVECTOR rot = DirectX::XMQuaternionMultiply(rot_x, rot_y);
             DirectX::XMMATRIX head_rot_matrix = DirectX::XMMatrixRotationQuaternion(rot);
             head_matrix = head_rot_matrix * head_matrix;
 
-            //DirectX::XMStoreFloat4x4(&camera.view, DirectX::XMMatrixInverse(nullptr, head_matrix));
             DirectX::XMStoreFloat4x4(&camera.view, DirectX::XMMatrixInverse(nullptr, head_matrix));
         }
     }

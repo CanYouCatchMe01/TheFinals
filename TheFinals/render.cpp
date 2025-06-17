@@ -1,5 +1,5 @@
-#define D3D_DEBUG 1 //0=None, 1=DX12Debug, 2=RenderDoc
-#define D3D_DEBUG_BREAK
+#define D3D_DEBUG 0 //0=None, 1=DX12Debug, 2=RenderDoc
+//#define D3D_DEBUG_BREAK
 
 #if D3D_DEBUG != 0
 #pragma message("WARNING: DX12 DEBUG ENABLED, DO NOT COMMIT LIKE THIS!")
@@ -641,7 +641,7 @@ namespace render {
         }
 
         ecs_world.each([](camera::Camera &c) {
-            constexpr float fov_y = DirectX::XMConvertToRadians(90.0f);
+            constexpr float fov_y = DirectX::XMConvertToRadians(60.0f);
             float aspect_ratio = float(game::client_width) / float(game::client_height);
             float near_z = 1000.0f; //reverse depth
             float far_z = 0.1f;
@@ -684,51 +684,49 @@ namespace render {
 
             command_list->ResourceBarrier(_countof(barrier), barrier);
         }
-        {
-            //frame constants
-            DirectX::XMMATRIX view_matrix = DirectX::XMMatrixIdentity();
-            DirectX::XMMATRIX proj_matrix = DirectX::XMMatrixIdentity();
+      
+        //frame constants
+        DirectX::XMMATRIX view_matrix = DirectX::XMMatrixIdentity();
+        DirectX::XMMATRIX proj_matrix = DirectX::XMMatrixIdentity();
 
-            ecs_world.each([&](camera::Camera &c) {
-                view_matrix = DirectX::XMLoadFloat4x4(&c.view);
-                proj_matrix = DirectX::XMLoadFloat4x4(&c.projection);
-                return;
-                });
+        ecs_world.each([&](camera::Camera &c) {
+            view_matrix = DirectX::XMLoadFloat4x4(&c.view);
+            proj_matrix = DirectX::XMLoadFloat4x4(&c.projection);
+            return;
+            });
 
-            DirectX::XMMATRIX view_proj = view_matrix * proj_matrix;
+        DirectX::XMMATRIX view_proj = view_matrix * proj_matrix;
 
-            void *frame_mapped_data = nullptr;
-            hr = frame_constants_upload->Map(0, nullptr, &frame_mapped_data);
-            DirectX::XMFLOAT4X4 *frame_constants_data = (DirectX::XMFLOAT4X4 *)frame_mapped_data;
-            DirectX::XMStoreFloat4x4(frame_constants_data, DirectX::XMMatrixTranspose(view_proj));
-            frame_constants_upload->Unmap(0, nullptr);
+        void *frame_mapped_data = nullptr;
+        hr = frame_constants_upload->Map(0, nullptr, &frame_mapped_data);
+        DirectX::XMFLOAT4X4 *frame_constants_data = (DirectX::XMFLOAT4X4 *)frame_mapped_data;
+        DirectX::XMStoreFloat4x4(frame_constants_data, DirectX::XMMatrixTranspose(view_proj));
+        frame_constants_upload->Unmap(0, nullptr);
 
-            DirectX::XMMATRIX object_matrix = DirectX::XMMatrixTranslation(0,0,0);
+        void *instance_mapped_data = nullptr;
+        hr = instance_buffer_upload->Map(0, nullptr, &instance_mapped_data);
+        InstanceData *instance_data = (InstanceData *)instance_mapped_data;
 
-            void *instance_mapped_data = nullptr;
-            hr = instance_buffer_upload->Map(0, nullptr, &instance_mapped_data);
-            InstanceData *instance_data = (InstanceData *)instance_mapped_data;
+        unsigned int instance_count = 0;
+        ecs_world.each([&](transform::Transform &transform, model::Model &model, material::Material &material) {
+            DirectX::XMMATRIX pos_matrix = DirectX::XMMatrixTranslation(transform.position.x, transform.position.y, transform.position.z);
+            DirectX::XMMATRIX rot_matrix = DirectX::XMMatrixRotationQuaternion(DirectX::XMLoadFloat4(&transform.rotation));
+            DirectX::XMMATRIX scale_matrix = DirectX::XMMatrixScaling(transform.scale.x, transform.scale.y, transform.scale.z);
 
-            unsigned int instance_count = 0;
-            ecs_world.each([&](transform::Transform &transform, model::Model &model, material::Material &material) {
-                DirectX::XMMATRIX pos_matrix = DirectX::XMMatrixTranslation(transform.position.x, transform.position.y, transform.position.z);
-                DirectX::XMMATRIX rot_matrix = DirectX::XMMatrixRotationQuaternion(DirectX::XMLoadFloat4(&transform.rotation));
-                DirectX::XMMATRIX scale_matrix = DirectX::XMMatrixScaling(transform.scale.x, transform.scale.y, transform.scale.z);
+            DirectX::XMMATRIX world_matrix = scale_matrix * rot_matrix * pos_matrix;
 
-                DirectX::XMMATRIX world_matrix = scale_matrix * rot_matrix * pos_matrix;
+            DirectX::XMStoreFloat4x4(&instance_data[instance_count].world_matrix, world_matrix);
+            instance_data[instance_count].srv_index = material.srv_index;
 
-                DirectX::XMStoreFloat4x4(&instance_data[instance_count].world_matrix, world_matrix);
-                instance_data[instance_count].srv_index = material.srv_index;
+            instance_count++;
+            });
 
-                instance_count++;
-                });
-
-            instance_buffer_upload->Unmap(0, nullptr);
+        instance_buffer_upload->Unmap(0, nullptr);
 
 
-            command_list->CopyResource(frame_constants, frame_constants_upload);
-            command_list->CopyResource(instance_buffer, instance_buffer_upload);
-        }
+        command_list->CopyResource(frame_constants, frame_constants_upload);
+        command_list->CopyResource(instance_buffer, instance_buffer_upload);
+        
         {
             D3D12_RESOURCE_BARRIER barrier[2] = {};
             barrier[0].Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
@@ -772,7 +770,6 @@ namespace render {
 
         // Draw
         command_list->SetGraphicsRootConstantBufferView(0, frame_constants->GetGPUVirtualAddress());
-
         command_list->SetGraphicsRootDescriptorTable(1, cbv_srv_uav_heap->GetGPUDescriptorHandleForHeapStart()); //texture
 
         D3D12_VERTEX_BUFFER_VIEW instance_buffer_view = {};
@@ -793,7 +790,7 @@ namespace render {
         index_buffer_view.Format = DXGI_FORMAT_R32_UINT;
         command_list->IASetIndexBuffer(&index_buffer_view);
 
-        command_list->DrawIndexedInstanced(cube_model.indicies.size(), 1, 0, 0, 0);
+        command_list->DrawIndexedInstanced(cube_model.indicies.size(), instance_count, 0, 0, 0);
 
         imui::render();
 

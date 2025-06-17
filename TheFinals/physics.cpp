@@ -18,28 +18,44 @@ namespace physics {
     physx::PxDefaultCpuDispatcher *g_dispatcher = NULL;
 
 #ifdef PHYSX_DEBUG 
-    physx::PxPvd *globalPvd = NULL;
-    physx::PxPvdTransport *globalTransport = NULL;
+    physx::PxPvd *g_pvd = NULL;
+    physx::PxPvdTransport *g_transport = NULL;
 #endif
+
+	void PxTransformToTransform(const physx::PxTransform &in_transform, const DirectX::XMFLOAT3 &in_scale, transform::Transform &out_transform) {
+		out_transform.position = DirectX::XMFLOAT3(in_transform.p.x, in_transform.p.y, in_transform.p.z);
+		out_transform.rotation = DirectX::XMFLOAT4(in_transform.q.w, in_transform.q.x, in_transform.q.y, in_transform.q.z);
+		out_transform.scale = in_scale;
+	}
+
+	void TransformToPxTransform(const transform::Transform &in_transform, physx::PxTransform &out_transform) {
+		physx::PxVec3 pos(in_transform.position.x, in_transform.position.y, in_transform.position.z);
+		physx::PxQuat rot(in_transform.rotation.x, in_transform.rotation.y, in_transform.rotation.z, in_transform.rotation.w);
+        out_transform = physx::PxTransform(pos, rot);
+	}
+
+	void PxExtendedVec3ToFloat3(const physx::PxExtendedVec3 &in_ext_vec3, DirectX::XMFLOAT3& out_float3) {
+		out_float3 = DirectX::XMFLOAT3(in_ext_vec3.x, in_ext_vec3.y, in_ext_vec3.z);
+	}
 
     void setup() {
 		g_foundation = PxCreateFoundation(PX_PHYSICS_VERSION, g_default_allocator, g_default_error_callback);
 
 #ifdef PHYSX_DEBUG 
-		globalPvd = PxCreatePvd(*globalFoundation);
-		globalTransport = physx::PxDefaultPvdSocketTransportCreate("127.0.0.1", 5425, 10);
+		g_pvd = PxCreatePvd(*g_foundation);
+		g_transport = physx::PxDefaultPvdSocketTransportCreate("127.0.0.1", 5425, 10);
 		//globalPvd->connect(*globalTransport, physx::PxPvdInstrumentationFlag::eALL); //Not needed. Doing later
 		bool recordMemoryAllocations = true;
 
-		globalPhysics = PxCreatePhysics(
+		g_physics = PxCreatePhysics(
 			PX_PHYSICS_VERSION,
-			*globalFoundation,
+			*g_foundation,
 			physx::PxTolerancesScale(),
 			recordMemoryAllocations,
-			globalPvd
+			g_pvd
 		);
 
-		PxInitExtensions(*globalPhysics, globalPvd);
+		PxInitExtensions(*g_physics, g_pvd);
 #else
 		g_physics = PxCreatePhysics(
 			PX_PHYSICS_VERSION,
@@ -53,20 +69,7 @@ namespace physics {
 		g_dispatcher = physx::PxDefaultCpuDispatcherCreate(2);
     }
 
-	transform::Transform PxTransformToTransform(const physx::PxTransform &px_transform, const DirectX::XMFLOAT3 &scale) {
-		transform::Transform transform = {};
-        transform.position = DirectX::XMFLOAT3(px_transform.p.x, px_transform.p.y, px_transform.p.z);
-        transform.rotation = DirectX::XMFLOAT4(px_transform.q.w, px_transform.q.x, px_transform.q.y, px_transform.q.z);
-        transform.scale = scale;
-
-		return transform;
-	}
-
-	DirectX::XMFLOAT3 PxExtendedVec3ToFloat3(const physx::PxExtendedVec3 &px_ext_vec3) {
-        return DirectX::XMFLOAT3(px_ext_vec3.x, px_ext_vec3.y, px_ext_vec3.z);
-	}
-
-	void update(physx::PxScene* physics_scene, float physics_accumulator, flecs::world &world, float delta_time) {
+	void update(physx::PxScene* physics_scene, float &physics_accumulator, flecs::world &world, float delta_time) {
 
         constexpr float fixed_delta_time = 1.0f / 60.0f;
 
@@ -84,11 +87,11 @@ namespace physics {
 		}
 
 		world.each([](physics::RigidDynamic &rigid_dynamic, transform::Transform &transform) {
-            transform = PxTransformToTransform(rigid_dynamic.rigid_dynamic->getGlobalPose(), transform.scale);
+            PxTransformToTransform(rigid_dynamic.rigid_dynamic->getGlobalPose(), transform.scale, transform);
 			});
 
 		world.each([](physics::Controller &controller, transform::Transform &transform) {
-			transform.position = PxExtendedVec3ToFloat3(controller.controller->getFootPosition());
+			PxExtendedVec3ToFloat3(controller.controller->getFootPosition(), transform.position);
 			});
 	}
 
@@ -102,5 +105,11 @@ namespace physics {
 		*physics_scene = g_physics->createScene(scene_desc);
 
 		*controller_manager = PxCreateControllerManager(**physics_scene);
+
+#ifdef PHYSX_DEBUG 
+		//Reconnect PVD so the latest scene is visible in the program
+		g_pvd->disconnect();
+		g_pvd->connect(*g_transport, physx::PxPvdInstrumentationFlag::eALL);
+#endif
 	}
 }
