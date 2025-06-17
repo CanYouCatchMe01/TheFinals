@@ -147,10 +147,13 @@
     <ClCompile Include="material.cpp" />
     <ClCompile Include="imui.cpp" />
     <ClCompile Include="physics.cpp" />
+    <ClCompile Include="player.cpp" />
     <ClCompile Include="render.cpp" />
     <ClCompile Include="scene.cpp" />
+    <ClCompile Include="transform.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="camera.h" />
     <ClInclude Include="directxtk12\Src\AlignedNew.h" />
     <ClInclude Include="directxtk12\Src\Bezier.h" />
     <ClInclude Include="directxtk12\Src\BinaryReader.h" />
@@ -170,6 +173,7 @@
     <ClInclude Include="dx12_helper.h" />
     <ClInclude Include="flecs\flecs.h" />
     <ClInclude Include="game.h" />
+    <ClInclude Include="own_model.h" />
     <ClInclude Include="imgui\imconfig.h" />
     <ClInclude Include="imgui\imgui.h" />
     <ClInclude Include="imgui\imgui_impl_dx12.h" />
@@ -181,10 +185,12 @@
     <ClInclude Include="material.h" />
     <ClInclude Include="imui.h" />
     <ClInclude Include="physics.h" />
+    <ClInclude Include="player.h" />
     <ClInclude Include="render.h" />
     <ClInclude Include="render_internal.h" />
     <ClInclude Include="scene.h" />
     <ClInclude Include="static_srv.h" />
+    <ClInclude Include="transform.h" />
     <ClInclude Include="windows_internal.h" />
   </ItemGroup>
   <ItemGroup>

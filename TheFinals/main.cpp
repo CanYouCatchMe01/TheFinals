@@ -19,6 +19,8 @@ namespace game {
     std::bitset<256> key_states;
 }
 
+bool should_resize = false;
+
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
@@ -70,9 +72,7 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
             game::client_width = rect.right - rect.left;
             game::client_height = rect.bottom - rect.top;
 
-            if (render::enabled) {
-                render::resize(game::client_width, game::client_height);
-            }
+            should_resize = true;
         }
         break;
         case WM_INPUT: {
@@ -90,12 +90,6 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
     }
 
     return DefWindowProc(hWnd, message, wParam, lParam);
-}
-
-void game_thread() {
-    while (true) {
-        render::render(game::client_width, game::client_height);
-    }
 }
 
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine, int nCmdShow) {
@@ -126,10 +120,12 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
     raw_input_device.hwndTarget = game::hwnd;
     BOOL ok = RegisterRawInputDevices(&raw_input_device, 1, sizeof(RAWINPUTDEVICE));
 
+    scene::Scene scene;
+
     render::setup(game::client_width, game::client_height, game::hwnd);
     imui::setup();
     physics::setup();
-    scene::setup();
+    scene::setup(scene);
 
     //std::thread t1(game_thread);
 
@@ -150,12 +146,19 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
             TranslateMessage(&msg);
             DispatchMessage(&msg);
         }
+
+        if (should_resize) {
+            render::resize(scene.world, game::client_width, game::client_height);
+            should_resize = false;
+        }
+
         auto now = Clock::now();
         std::chrono::duration<float> deltaTime = now - lastTime;
         lastTime = now;
 
         game::delta_time = deltaTime.count();
 
-        render::render(game::client_width, game::client_height);
+        scene::update(scene);
+        render::render(scene.world, game::client_width, game::client_height);
     }
 }

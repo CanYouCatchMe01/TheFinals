@@ -10,15 +10,16 @@ struct PSInput {
     float4 position : SV_POSITION;
     float3 normal : NORMAL;
     float2 uv : UV;
+    uint srv_index : SRV_INDEX;
 };
 
-Texture2D<float4> texture0 : register(t0);
+Texture2D textures[] : register(t0, space0);
 SamplerState sampler0 : register(s0);
 
 [RootSignature(MATERIAL_RS)]
 float4 main(PSInput input) : SV_TARGET {
 #if 1
-    float3 texture_color = texture0.Sample(sampler0, input.uv).xyz;
+    float3 texture_color = textures[input.srv_index].Sample(sampler0, input.uv).xyz;
     
     float3 dir_light_direction = normalize(float3(0, 0, 1));
     float dir_light_brightness = dot(input.normal, -dir_light_direction);

@@ -13,6 +13,5 @@
 
 #define MATERIAL_RS "RootFlags( ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT), " \
 "CBV(b0, visibility = SHADER_VISIBILITY_VERTEX), " \
-"CBV(b1, visibility = SHADER_VISIBILITY_VERTEX), " \
-"DescriptorTable( SRV(t0, numDescriptors = 1), visibility = SHADER_VISIBILITY_PIXEL), " \
+"DescriptorTable( SRV(t0, numDescriptors = unbounded), visibility = SHADER_VISIBILITY_PIXEL), " \
 "StaticSampler(s0, " SAMPLER_STATE_ANISOTROPIC_WARP "), "

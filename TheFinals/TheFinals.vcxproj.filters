@@ -25,6 +25,9 @@
     <Filter Include="Source Files\flecs">
       <UniqueIdentifier>{f3363e35-fd33-47df-ab68-6d775490d7c8}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\components">
+      <UniqueIdentifier>{d5f0e6c9-9345-485b-8ce4-e436495874e3}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -198,6 +201,12 @@
     <ClCompile Include="scene.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="transform.cpp">
+      <Filter>Source Files\components</Filter>
+    </ClCompile>
+    <ClCompile Include="player.cpp">
+      <Filter>Source Files\components</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="render.h">
@@ -304,6 +313,18 @@
     </ClInclude>
     <ClInclude Include="scene.h">
       <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="transform.h">
+      <Filter>Source Files\components</Filter>
+    </ClInclude>
+    <ClInclude Include="player.h">
+      <Filter>Source Files\components</Filter>
+    </ClInclude>
+    <ClInclude Include="own_model.h">
+      <Filter>Source Files\components</Filter>
+    </ClInclude>
+    <ClInclude Include="camera.h">
+      <Filter>Source Files\components</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

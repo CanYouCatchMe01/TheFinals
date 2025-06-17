@@ -1,5 +1,5 @@
-#define D3D_DEBUG 0 //0=None, 1=DX12Debug, 2=RenderDoc
-//#define D3D_DEBUG_BREAK
+#define D3D_DEBUG 1 //0=None, 1=DX12Debug, 2=RenderDoc
+#define D3D_DEBUG_BREAK
 
 #if D3D_DEBUG != 0
 #pragma message("WARNING: DX12 DEBUG ENABLED, DO NOT COMMIT LIKE THIS!")
@@ -17,6 +17,7 @@
 #include <fstream>
 #include <map>
 #include "dx12_helper.h"
+#include "own_model.h"
 #include "material.h"
 #include <filesystem>
 #include "renderdoc_app.h"
@@ -24,6 +25,9 @@
 #include "game.h"
 #include "imui.h"
 #include "static_srv.h"
+#include "flecs/flecs.h"
+#include "transform.h"
+#include "camera.h"
 
 #pragma comment(lib, "dxgi.lib")
 
@@ -39,13 +43,11 @@ namespace render {
         std::vector<unsigned int> indicies;
     };
 
-    struct Camera {
-        DirectX::XMFLOAT3 position;
-        DirectX::XMFLOAT4 rotation; // Quaternion
-        DirectX::XMMATRIX projection;
+    struct InstanceData {
+        DirectX::XMFLOAT4X4 world_matrix;
+        unsigned int srv_index; //index in the srv heap
     };
 
-    bool enabled = false;
     ID3D12Device *device = nullptr;
     ID3D12CommandQueue *command_queue = nullptr;
     ID3D12CommandAllocator *command_allocator = nullptr;
@@ -70,9 +72,8 @@ namespace render {
 
     ID3D12Resource *frame_constants = nullptr;
     ID3D12Resource *frame_constants_upload = nullptr;
-    ID3D12Resource *object_buffer = nullptr;
-    ID3D12Resource *object_buffer_upload = nullptr;
-    Camera camera = {};
+    ID3D12Resource *instance_buffer = nullptr;
+    ID3D12Resource *instance_buffer_upload = nullptr;
 
     std::string get_renderdoc_dll_path() {
         char *value = NULL;
@@ -230,7 +231,7 @@ namespace render {
     }
 
     void setup(unsigned int width, unsigned int height, HWND hwnd) {
-#ifdef D3D_DEBUG_BREAK
+#if D3D_DEBUG == 1
     {
         ID3D12Debug1 *debug_controller1 = nullptr;
         if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debug_controller1)))) {
@@ -244,7 +245,7 @@ namespace render {
         //The device is like a virtual representation of the GPU
         HRESULT hr = D3D12CreateDevice(nullptr, D3D_FEATURE_LEVEL_11_0, IID_PPV_ARGS(&device));
 
-#if D3D_DEBUG == 1
+#ifdef D3D_DEBUG_BREAK
         {
             ID3D12InfoQueue *infoQueue = nullptr;
             if (SUCCEEDED(device->QueryInterface(__uuidof(ID3D12InfoQueue), (void **)&infoQueue))) {
@@ -447,14 +448,14 @@ namespace render {
                 IID_PPV_ARGS(&frame_constants_upload)
             );
 
-            resource_desc.Width = sizeof(DirectX::XMFLOAT4X4);
+            resource_desc.Width = sizeof(InstanceData) * 1000;
             hr = device->CreateCommittedResource(
                 &heap_properties,
                 D3D12_HEAP_FLAG_NONE,
                 &resource_desc,
                 D3D12_RESOURCE_STATE_COMMON,
                 nullptr,
-                IID_PPV_ARGS(&object_buffer)
+                IID_PPV_ARGS(&instance_buffer)
             );
 
             hr = device->CreateCommittedResource(
@@ -463,9 +464,8 @@ namespace render {
                 &resource_desc,
                 D3D12_RESOURCE_STATE_GENERIC_READ,
                 nullptr,
-                IID_PPV_ARGS(&object_buffer_upload)
+                IID_PPV_ARGS(&instance_buffer_upload)
             );
-
 
             //copy data from CPU to the upload buffers
             void *vertex_mapped_data = nullptr;
@@ -508,7 +508,7 @@ namespace render {
 
                 barrier[3].Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
                 barrier[3].Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-                barrier[3].Transition.pResource = object_buffer;
+                barrier[3].Transition.pResource = instance_buffer;
                 barrier[3].Transition.StateBefore = D3D12_RESOURCE_STATE_COMMON;
                 barrier[3].Transition.StateAfter = D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER;
                 barrier[3].Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
@@ -561,17 +561,6 @@ namespace render {
                 hr = fence->SetEventOnCompletion(current_fence_value, fence_event);
                 WaitForSingleObject(fence_event, INFINITE);
             }
-
-            camera.position = DirectX::XMFLOAT3(0, 0, -1);
-            DirectX::XMStoreFloat4(&camera.rotation, DirectX::XMQuaternionIdentity());
-            
-            constexpr float fov_y = DirectX::XMConvertToRadians(90.0f);
-            float aspect_ratio = float(width) / float(height);
-            float near_z = 1000.0f; //reverse depth
-            float far_z = 0.1f;
-            camera.projection = DirectX::XMMatrixPerspectiveFovLH(fov_y, aspect_ratio, near_z, far_z);
-
-            enabled = true;
 
 //#if 1
 //            RECT desktop;
@@ -630,7 +619,7 @@ namespace render {
         }
     }
 
-    void resize(unsigned int width, unsigned int height) {
+    void resize(flecs::world &ecs_world, unsigned int width, unsigned int height) {
         create_depth_buffer(width, height);
 
         for (UINT i = 0; i < 2; ++i) {
@@ -651,37 +640,17 @@ namespace render {
             }
         }
 
-        constexpr float fov_y = DirectX::XMConvertToRadians(90.0f);
-        float aspect_ratio = float(width) / float(height);
-        float near_z = 1000.0f; //reverse depth
-        float far_z = 0.1f;
-        camera.projection = DirectX::XMMatrixPerspectiveFovLH(fov_y, aspect_ratio, near_z, far_z);
+        ecs_world.each([](camera::Camera &c) {
+            constexpr float fov_y = DirectX::XMConvertToRadians(90.0f);
+            float aspect_ratio = float(game::client_width) / float(game::client_height);
+            float near_z = 1000.0f; //reverse depth
+            float far_z = 0.1f;
+            DirectX::XMMATRIX projection_matrix = DirectX::XMMatrixPerspectiveFovLH(fov_y, aspect_ratio, near_z, far_z);
+            DirectX::XMStoreFloat4x4(&c.projection, projection_matrix);
+            });
     }
 
-    void render(unsigned int width, unsigned int height) {
-
-        if (game::key_states[VK_RBUTTON]) {
-            // Get the client rect (in client coordinates)
-            RECT clientRect;
-            GetClientRect(game::hwnd, &clientRect);
-
-            // Calculate the center of the client area
-            int centerX = (clientRect.right - clientRect.left) / 2;
-            int centerY = (clientRect.bottom - clientRect.top) / 2;
-
-            // Convert the center point to screen coordinates
-            POINT pt = { centerX, centerY };
-            ClientToScreen(game::hwnd, &pt);
-
-            // Move the cursor to the center of the client area
-            SetCursorPos(pt.x, pt.y);
-
-            while (ShowCursor(FALSE) >= 0);
-        } else {
-            while (ShowCursor(TRUE) < 0);
-        }
-
-
+    void render(flecs::world &ecs_world, unsigned int width, unsigned int height) {
         // Record commands to draw a triangle
         HRESULT hr = command_allocator->Reset();
         hr = command_list->Reset(command_allocator, nullptr);
@@ -708,7 +677,7 @@ namespace render {
 
             barrier[2].Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
             barrier[2].Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-            barrier[2].Transition.pResource = object_buffer;
+            barrier[2].Transition.pResource = instance_buffer;
             barrier[2].Transition.StateBefore = D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER;
             barrier[2].Transition.StateAfter = D3D12_RESOURCE_STATE_COPY_DEST;
             barrier[2].Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
@@ -716,47 +685,17 @@ namespace render {
             command_list->ResourceBarrier(_countof(barrier), barrier);
         }
         {
-            DirectX::XMFLOAT2 cam_velocity = DirectX::XMFLOAT2(0, 0);
-            if (game::key_states['D']) cam_velocity.x += 1.0f;
-            if (game::key_states['A']) cam_velocity.x -= 1.0f;
-            if (game::key_states['W']) cam_velocity.y += 1.0f;
-            if (game::key_states['S']) cam_velocity.y -= 1.0f;
-
-            float move_speed = 5.0f * game::delta_time;
-            cam_velocity.x *= move_speed;
-            cam_velocity.y *= move_speed;
-
-            float rotation_speed = 0.01f;
-
-            float mouse_velocity_speed_x = game::key_states[VK_RBUTTON] ? float(game::mouse_velocity_x) * rotation_speed : 0.0f;
-            float mouse_velocity_speed_y = game::key_states[VK_RBUTTON] ? float(game::mouse_velocity_y) * rotation_speed : 0.0f;
-
-            DirectX::XMVECTOR rot_x = DirectX::XMQuaternionRotationAxis(DirectX::XMVectorSet(0, 1, 0, 0), mouse_velocity_speed_x);
-            DirectX::XMVECTOR rot_y = DirectX::XMQuaternionRotationAxis(DirectX::XMVectorSet(1, 0, 0, 0), mouse_velocity_speed_y);
-            DirectX::XMVECTOR cam_rot = DirectX::XMVectorSet(camera.rotation.x, camera.rotation.y, camera.rotation.z, camera.rotation.w);
-            cam_rot = DirectX::XMQuaternionMultiply(cam_rot, rot_x);
-            cam_rot = DirectX::XMQuaternionMultiply(rot_y, cam_rot);
-            DirectX::XMStoreFloat4(&camera.rotation, cam_rot);
-
-            DirectX::XMVECTOR cam_right = DirectX::XMVector3Rotate(DirectX::XMVectorSet(1, 0, 0, 0), cam_rot);
-            cam_right = DirectX::XMVectorMultiply(cam_right, DirectX::XMVectorSet(cam_velocity.x, cam_velocity.x, cam_velocity.x, 0));
-            DirectX::XMVECTOR cam_forward = DirectX::XMVector3Rotate(DirectX::XMVectorSet(0, 0, 1, 0), cam_rot);
-            cam_forward = DirectX::XMVectorMultiply(cam_forward, DirectX::XMVectorSet(cam_velocity.y, cam_velocity.y, cam_velocity.y, 0));
-
-            camera.position.x += DirectX::XMVectorGetX(cam_right) + DirectX::XMVectorGetX(cam_forward);
-            camera.position.y += DirectX::XMVectorGetY(cam_right) + DirectX::XMVectorGetY(cam_forward);
-            camera.position.z += DirectX::XMVectorGetZ(cam_right) + DirectX::XMVectorGetZ(cam_forward);
-            
-
-
             //frame constants
-            DirectX::XMMATRIX pos_matrix = DirectX::XMMatrixTranslation(camera.position.x, camera.position.y, camera.position.z);
-            DirectX::XMVECTOR rot = DirectX::XMLoadFloat4(&camera.rotation);
-            DirectX::XMMATRIX rot_matrix = DirectX::XMMatrixRotationQuaternion(rot);
+            DirectX::XMMATRIX view_matrix = DirectX::XMMatrixIdentity();
+            DirectX::XMMATRIX proj_matrix = DirectX::XMMatrixIdentity();
 
-            DirectX::XMMATRIX world = rot_matrix * pos_matrix;
-            DirectX::XMMATRIX view = DirectX::XMMatrixInverse(nullptr, world);
-            DirectX::XMMATRIX view_proj = view * camera.projection;
+            ecs_world.each([&](camera::Camera &c) {
+                view_matrix = DirectX::XMLoadFloat4x4(&c.view);
+                proj_matrix = DirectX::XMLoadFloat4x4(&c.projection);
+                return;
+                });
+
+            DirectX::XMMATRIX view_proj = view_matrix * proj_matrix;
 
             void *frame_mapped_data = nullptr;
             hr = frame_constants_upload->Map(0, nullptr, &frame_mapped_data);
@@ -766,14 +705,29 @@ namespace render {
 
             DirectX::XMMATRIX object_matrix = DirectX::XMMatrixTranslation(0,0,0);
 
-            void *object_mapped_data = nullptr;
-            hr = object_buffer_upload->Map(0, nullptr, &object_mapped_data);
-            DirectX::XMFLOAT4X4 *object_constants_data = (DirectX::XMFLOAT4X4 *)object_mapped_data;
-            DirectX::XMStoreFloat4x4(object_constants_data, DirectX::XMMatrixTranspose(object_matrix));
-            object_buffer_upload->Unmap(0, nullptr);
+            void *instance_mapped_data = nullptr;
+            hr = instance_buffer_upload->Map(0, nullptr, &instance_mapped_data);
+            InstanceData *instance_data = (InstanceData *)instance_mapped_data;
+
+            unsigned int instance_count = 0;
+            ecs_world.each([&](transform::Transform &transform, model::Model &model, material::Material &material) {
+                DirectX::XMMATRIX pos_matrix = DirectX::XMMatrixTranslation(transform.position.x, transform.position.y, transform.position.z);
+                DirectX::XMMATRIX rot_matrix = DirectX::XMMatrixRotationQuaternion(DirectX::XMLoadFloat4(&transform.rotation));
+                DirectX::XMMATRIX scale_matrix = DirectX::XMMatrixScaling(transform.scale.x, transform.scale.y, transform.scale.z);
+
+                DirectX::XMMATRIX world_matrix = scale_matrix * rot_matrix * pos_matrix;
+
+                DirectX::XMStoreFloat4x4(&instance_data[instance_count].world_matrix, world_matrix);
+                instance_data[instance_count].srv_index = material.srv_index;
+
+                instance_count++;
+                });
+
+            instance_buffer_upload->Unmap(0, nullptr);
+
 
             command_list->CopyResource(frame_constants, frame_constants_upload);
-            command_list->CopyResource(object_buffer, object_buffer_upload);
+            command_list->CopyResource(instance_buffer, instance_buffer_upload);
         }
         {
             D3D12_RESOURCE_BARRIER barrier[2] = {};
@@ -786,7 +740,7 @@ namespace render {
 
             barrier[1].Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
             barrier[1].Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-            barrier[1].Transition.pResource = object_buffer;
+            barrier[1].Transition.pResource = instance_buffer;
             barrier[1].Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
             barrier[1].Transition.StateAfter = D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER;
             barrier[1].Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
@@ -818,10 +772,14 @@ namespace render {
 
         // Draw
         command_list->SetGraphicsRootConstantBufferView(0, frame_constants->GetGPUVirtualAddress());
-        command_list->SetGraphicsRootConstantBufferView(1, object_buffer->GetGPUVirtualAddress());
 
-        D3D12_GPU_DESCRIPTOR_HANDLE cbv_srv_uav_gpu_handle(cbv_srv_uav_heap->GetGPUDescriptorHandleForHeapStart());
-        command_list->SetGraphicsRootDescriptorTable(2, cbv_srv_uav_gpu_handle); //texture
+        command_list->SetGraphicsRootDescriptorTable(1, cbv_srv_uav_heap->GetGPUDescriptorHandleForHeapStart()); //texture
+
+        D3D12_VERTEX_BUFFER_VIEW instance_buffer_view = {};
+        instance_buffer_view.BufferLocation = instance_buffer->GetGPUVirtualAddress();
+        instance_buffer_view.StrideInBytes = sizeof(InstanceData);
+        instance_buffer_view.SizeInBytes = sizeof(InstanceData) * 1000; //max 1000 instances
+        command_list->IASetVertexBuffers(1, 1, &instance_buffer_view);
 
         D3D12_VERTEX_BUFFER_VIEW vertex_buffer_view = {};
         vertex_buffer_view.BufferLocation = vertex_buffer->GetGPUVirtualAddress();

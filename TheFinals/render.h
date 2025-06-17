@@ -9,6 +9,10 @@ struct ID3D12DescriptorHeap;
 
 #define FRAMES_IN_FLIGHT 1
 
+namespace flecs {
+    struct world;
+}
+
 namespace render {
     extern bool enabled;
     extern ID3D12Device *device;
@@ -19,6 +23,6 @@ namespace render {
 
     void setup(unsigned int width, unsigned int height, HWND hwnd);
     void renderdoc_setup();
-    void resize(unsigned int width, unsigned int height);
-    void render(unsigned int width, unsigned int height);
+    void resize(flecs::world &ecs_world, unsigned int width, unsigned int height);
+    void render(flecs::world &ecs_world, unsigned int width, unsigned int height);
 }
