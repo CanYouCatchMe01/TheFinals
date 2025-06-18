@@ -141,7 +141,7 @@ namespace player {
         flecs::entity player_entity;
         flecs::entity camera_entity;
 
-        world.each([&](flecs::entity e, Player &p, transform::Transform& t) {
+        world.each([&](flecs::entity e, Player &p, physics::Controller &c) {
             player_entity = e;
             return;
             });
@@ -152,11 +152,12 @@ namespace player {
             });
 
         if (player_entity.is_valid() && camera_entity.is_valid()) {
-            const transform::Transform &player_transform = player_entity.get<transform::Transform>();
             const player::Player &player_player = player_entity.get<player::Player>();
+            const physics::Controller &player_controller = player_entity.get<physics::Controller>();
             camera::Camera &camera = camera_entity.get_mut<camera::Camera>();
 
-            DirectX::XMMATRIX head_matrix = DirectX::XMMatrixTranslation(player_transform.position.x, player_transform.position.y + player_player.head_height, player_transform.position.z);
+            physx::PxExtendedVec3 feet_pos = player_controller.controller->getFootPosition();
+            DirectX::XMMATRIX head_matrix = DirectX::XMMatrixTranslation(feet_pos.x, feet_pos.y + player_player.head_height, feet_pos.z);
 
             DirectX::XMVECTOR rot_x = DirectX::XMQuaternionRotationAxis(DirectX::XMVectorSet(1, 0, 0, 0), player_player.head_rotation_x);
             DirectX::XMVECTOR rot_y = DirectX::XMQuaternionRotationAxis(DirectX::XMVectorSet(0, 1, 0, 0), player_player.head_rotation_y);
