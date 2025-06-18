@@ -332,7 +332,7 @@ namespace render {
         create_depth_buffer(width, height);
         material::setup();
 
-        cube_model = load_model_from_obj("Assets/cube2.obj");
+        cube_model = load_model_from_obj("Assets/cube.obj");
         ID3D12Resource *vertex_buffer_upload = nullptr; //slow. CPU and GPU access
         ID3D12Resource *index_buffer_upload = nullptr; //slow. CPU and GPU access
         ID3D12Resource *texture_resource = nullptr; //fast. GPU access only
@@ -641,7 +641,7 @@ namespace render {
         }
 
         ecs_world.each([](camera::Camera &c) {
-            constexpr float fov_y = DirectX::XMConvertToRadians(60.0f);
+            constexpr float fov_y = DirectX::XMConvertToRadians(80.0f);
             float aspect_ratio = float(game::client_width) / float(game::client_height);
             float near_z = 1000.0f; //reverse depth
             float far_z = 0.1f;

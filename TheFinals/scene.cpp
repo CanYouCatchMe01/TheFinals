@@ -11,7 +11,7 @@
 
 namespace scene {
     physx::PxShape *ground_shape = nullptr;
-    physx::PxShape *middle_shape = nullptr;
+    physx::PxShape *cube_shape = nullptr;
     physx::PxMaterial *px_material = nullptr;
 
     void setup(Scene& scene) {
@@ -21,7 +21,7 @@ namespace scene {
         ground_shape = physics::g_physics->createShape(box, *px_material);
 
         physx::PxBoxGeometry box2 = physx::PxBoxGeometry(physx::PxVec3(0.5, 0.5, 0.5));
-        middle_shape = physics::g_physics->createShape(box2, *px_material);
+        cube_shape = physics::g_physics->createShape(box2, *px_material);
 
         physics::create_scene(&scene.physics_scene, &scene.controller_manager);
 
@@ -43,7 +43,7 @@ namespace scene {
         //camera
         scene.world.entity()
             .insert([](camera::Camera &c) {
-            constexpr float fov_y = DirectX::XMConvertToRadians(60.0f);
+            constexpr float fov_y = DirectX::XMConvertToRadians(80.0f);
             float aspect_ratio = float(game::client_width) / float(game::client_height);
             float near_z = 1000.0f; //reverse depth
             float far_z = 0.1f;
@@ -54,7 +54,7 @@ namespace scene {
 
         //ground
         scene.world.entity()
-            .insert([&](transform::Transform &t, model::Model& model, material::Material &material, physics::RigidStatic rigid_static) {
+            .insert([&](transform::Transform &t, model::Model& model, material::Material &material, physics::RigidStatic &rigid_static) {
             t.position = DirectX::XMFLOAT3(0, -2, 0);
             t.rotation = DirectX::XMFLOAT4(0, 0, 0, 1);
             t.scale = DirectX::XMFLOAT3(10, 1, 10);
@@ -70,23 +70,28 @@ namespace scene {
             scene.physics_scene->addActor(*rigid_static.rigid_static);
                 });
 
-        //ground
-        scene.world.entity()
-            .insert([&](transform::Transform &t, model::Model &model, material::Material &material, physics::RigidStatic rigid_static) {
-            t.position = DirectX::XMFLOAT3(0, 0, 1);
-            t.rotation = DirectX::XMFLOAT4(0, 0, 0, 1);
-            t.scale = DirectX::XMFLOAT3(1, 1, 1);
+        //cube tower
+        for (size_t i = 0; i < 5; i++) {
+            for (size_t j = 0; j < 5; j++) {
+                scene.world.entity()
+                    .insert([&](transform::Transform &t, model::Model &model, material::Material &material, physics::RigidDynamic &rigid_dynamic) {
+                    t.position = DirectX::XMFLOAT3(i + 0.1 * i - 5.0f/2.0f, j + 0.1 * j, 3);
+                    t.rotation = DirectX::XMFLOAT4(0, 0, 0, 1);
+                    t.scale = DirectX::XMFLOAT3(1, 1, 1);
 
-            material.srv_index = render::STATIC_SRV::MAIN_TEXTURE;
+                    material.srv_index = render::STATIC_SRV::MAIN_TEXTURE;
 
-            physx::PxTransform px_transform;
-            physics::TransformToPxTransform(t, px_transform);
+                    physx::PxTransform px_transform;
+                    physics::TransformToPxTransform(t, px_transform);
 
-            rigid_static.rigid_static = physics::g_physics->createRigidStatic(px_transform);
-            rigid_static.rigid_static->attachShape(*middle_shape);
+                    rigid_dynamic.rigid_dynamic = physics::g_physics->createRigidDynamic(px_transform);
+                    rigid_dynamic.rigid_dynamic->attachShape(*cube_shape);
+                    rigid_dynamic.rigid_dynamic->setMass(10.0f);
 
-            scene.physics_scene->addActor(*rigid_static.rigid_static);
-                });
+                    scene.physics_scene->addActor(*rigid_dynamic.rigid_dynamic);
+                        });
+            }
+        }
     }
 
     void update(Scene& scene) {
