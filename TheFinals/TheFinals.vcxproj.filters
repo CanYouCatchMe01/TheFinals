@@ -326,6 +326,9 @@
     <ClInclude Include="camera.h">
       <Filter>Source Files\components</Filter>
     </ClInclude>
+    <ClInclude Include="filter_group.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="vertex_shader.vs.hlsl">

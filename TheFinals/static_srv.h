@@ -6,7 +6,8 @@
 
 namespace render {
     enum STATIC_SRV {
-        MAIN_TEXTURE,
+        BRICK_TEXTURE,
+        STONE_GRASS_TEXTURE,
         IMGUI_SRV,
         EXTRA_1 = IMGUI_SRV + IMGUI_MAX_SRV,
         EXTRA_2,

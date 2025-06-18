@@ -10,6 +10,7 @@ struct VSInput {
     float4 instance_row3 : INSTANCEROWC;
     float4 instance_row4 : INSTANCEROWD;
     uint srv_index : SRV_INDEX;
+    float uv_scale : UV_SCALE;
 };
 
 struct PSInput {
@@ -37,7 +38,7 @@ PSInput main(VSInput input) {
     float4 world_position = mul(float4(input.position, 1.0f), instance_transform);
     output.position = mul(world_position, view_proj);
     output.normal = normalize(mul(input.normal, (float3x3) instance_transform));
-    output.uv = input.uv;
+    output.uv = input.uv * input.uv_scale;
     output.srv_index = input.srv_index;
 
     return output;

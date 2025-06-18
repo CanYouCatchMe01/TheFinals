@@ -171,6 +171,7 @@
     <ClInclude Include="directxtk12\Src\SharedResourcePool.h" />
     <ClInclude Include="directxtk12\Src\vbo.h" />
     <ClInclude Include="dx12_helper.h" />
+    <ClInclude Include="filter_group.h" />
     <ClInclude Include="flecs\flecs.h" />
     <ClInclude Include="game.h" />
     <ClInclude Include="own_model.h" />

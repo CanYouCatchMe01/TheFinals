@@ -8,6 +8,7 @@
 #include <algorithm>
 #include "physics.h"
 #include <cmath>
+#include "filter_group.h"
 
 namespace player {
     void update(scene::Scene &scene) {
@@ -56,8 +57,6 @@ namespace player {
                 y_velocity = 4.0f; // Jump
             }
 
-            //float y_velocity = 0.0f; // Gravity
-
             DirectX::XMFLOAT2 character_velocity = DirectX::XMFLOAT2(0, 0);
             if (game::is_key_held_down('D')) character_velocity.x += 1.0f;
             if (game::is_key_held_down('A')) character_velocity.x -= 1.0f;
@@ -85,6 +84,55 @@ namespace player {
             } else {
                 p.velocity.y = y_velocity; // Apply gravity
             };
+
+            //shoot
+            if (game::is_key_pressed(VK_LBUTTON)) {
+
+                physx::PxVec3 px_origin = physx::toVec3(controller.controller->getFootPosition());
+                px_origin.y += p.head_height; // Adjust origin to head height
+
+                DirectX::XMVECTOR rot_x = DirectX::XMQuaternionRotationAxis(DirectX::XMVectorSet(1, 0, 0, 0), p.head_rotation_x);
+                DirectX::XMVECTOR rot_y = DirectX::XMQuaternionRotationAxis(DirectX::XMVectorSet(0, 1, 0, 0), p.head_rotation_y);
+                DirectX::XMVECTOR rot = DirectX::XMQuaternionMultiply(rot_x, rot_y);
+
+                DirectX::XMVECTOR head_forward = DirectX::XMVector3Rotate(DirectX::XMVectorSet(0, 0, 1, 0), rot);
+                DirectX::XMFLOAT3 direction;
+                DirectX::XMStoreFloat3(&direction, head_forward);
+
+                physx::PxVec3 px_direction;
+                physics::Float3ToPxVec3(direction, px_direction);
+
+                physx::PxRaycastBuffer hit_buffer = {};
+                physx::PxQueryFilterData filter_data;
+                filter_data.data.word0 = ~FilterGroup::Player; //do not hit player
+
+                scene.physics_scene->raycast(
+                    px_origin,
+                    px_direction,
+                    1000.0f,
+                    hit_buffer,
+                    physx::PxHitFlag::eDEFAULT,
+                    filter_data
+                );
+
+                if (hit_buffer.hasBlock) {
+                    //add impulse to the object that was hit
+                    physx::PxRigidDynamic *hit_rigid_dynamic = hit_buffer.block.actor->is<physx::PxRigidDynamic>();
+
+                    if (hit_rigid_dynamic) {
+
+                        if (hit_rigid_dynamic->getRigidBodyFlags() & physx::PxRigidBodyFlag::eKINEMATIC) {
+                            int hey = 0;
+                            hey;
+                        }
+
+                        // Calculate the impulse direction
+                        physx::PxVec3 impulse_direction = px_direction.getNormalized();
+                        // Apply an impulse to the hit object
+                        hit_rigid_dynamic->addForce(impulse_direction * 100.0f, physx::PxForceMode::eIMPULSE);
+                    }
+                }
+            }
             });
     }
 
@@ -108,9 +156,7 @@ namespace player {
             const player::Player &player_player = player_entity.get<player::Player>();
             camera::Camera &camera = camera_entity.get_mut<camera::Camera>();
 
-            DirectX::XMMATRIX player_matrix = DirectX::XMMatrixTranslation(player_transform.position.x, player_transform.position.y, player_transform.position.z);
-            DirectX::XMMATRIX head_matrix = player_matrix * DirectX::XMMatrixTranslation(0, player_player.head_height, 0);
-            //DirectX::XMMATRIX head_matrix = player_matrix;
+            DirectX::XMMATRIX head_matrix = DirectX::XMMatrixTranslation(player_transform.position.x, player_transform.position.y + player_player.head_height, player_transform.position.z);
 
             DirectX::XMVECTOR rot_x = DirectX::XMQuaternionRotationAxis(DirectX::XMVectorSet(1, 0, 0, 0), player_player.head_rotation_x);
             DirectX::XMVECTOR rot_y = DirectX::XMQuaternionRotationAxis(DirectX::XMVectorSet(0, 1, 0, 0), player_player.head_rotation_y);

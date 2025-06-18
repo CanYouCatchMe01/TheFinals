@@ -22,8 +22,8 @@ float4 main(PSInput input) : SV_TARGET {
     float3 texture_color = textures[input.srv_index].Sample(sampler0, input.uv).xyz;
     
     float3 dir_light_direction = normalize(float3(1, -1, 0));
-    float dir_light_brightness = dot(input.normal, -dir_light_direction);
-    float3 dir_light_color = dir_light_brightness * texture_color;
+    float dir_light_brightness = max(dot(input.normal, -dir_light_direction), 0.0f);
+    float3 dir_light_color = 0.7 * dir_light_brightness * texture_color;
     float3 ambient_light_color = float3(0.1, 0.1, 0.1) * texture_color;
     float3 light_final_color = ambient_light_color + dir_light_color;
     

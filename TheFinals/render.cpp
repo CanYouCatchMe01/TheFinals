@@ -46,6 +46,7 @@ namespace render {
     struct InstanceData {
         DirectX::XMFLOAT4X4 world_matrix;
         unsigned int srv_index; //index in the srv heap
+        float uv_scale;
     };
 
     ID3D12Device *device = nullptr;
@@ -335,22 +336,38 @@ namespace render {
         cube_model = load_model_from_obj("Assets/cube.obj");
         ID3D12Resource *vertex_buffer_upload = nullptr; //slow. CPU and GPU access
         ID3D12Resource *index_buffer_upload = nullptr; //slow. CPU and GPU access
-        ID3D12Resource *texture_resource = nullptr; //fast. GPU access only
-        ID3D12Resource *texture_resource_upload = nullptr; //slow. CPU and GPU access
+        ID3D12Resource *texture_resource0 = nullptr; //fast. GPU access only
+        ID3D12Resource *texture_resource_upload0 = nullptr; //slow. CPU and GPU access
+        ID3D12Resource *texture_resource1 = nullptr; //fast. GPU access only
+        ID3D12Resource *texture_resource_upload1 = nullptr; //slow. CPU and GPU access
 
-        std::unique_ptr<uint8_t[]> dds_data;
-        std::vector<D3D12_SUBRESOURCE_DATA> subresources;
+        std::unique_ptr<uint8_t[]> dds_data0;
+        std::vector<D3D12_SUBRESOURCE_DATA> subresources0;
         DirectX::LoadDDSTextureFromFile(
             device,
-            L"Assets/brick512.dds",
-            &texture_resource, //create black texture, we will upload its data later
-            dds_data,
-            subresources
+            L"Assets/brick.dds",
+            &texture_resource0, //create black texture, we will upload its data later
+            dds_data0,
+            subresources0
         );
 
-        D3D12_CPU_DESCRIPTOR_HANDLE cbv_srv_uav_handle = cbv_srv_uav_heap->GetCPUDescriptorHandleForHeapStart();
-        cbv_srv_uav_handle.ptr += render::STATIC_SRV::MAIN_TEXTURE * device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-        device->CreateShaderResourceView(texture_resource, nullptr, cbv_srv_uav_handle);
+        D3D12_CPU_DESCRIPTOR_HANDLE cbv_srv_uav_handle0 = cbv_srv_uav_heap->GetCPUDescriptorHandleForHeapStart();
+        cbv_srv_uav_handle0.ptr += render::STATIC_SRV::BRICK_TEXTURE * device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+        device->CreateShaderResourceView(texture_resource0, nullptr, cbv_srv_uav_handle0);
+
+        std::unique_ptr<uint8_t[]> dds_data1;
+        std::vector<D3D12_SUBRESOURCE_DATA> subresources1;
+        DirectX::LoadDDSTextureFromFile(
+            device,
+            L"Assets/stone_grass.dds",
+            &texture_resource1, //create black texture, we will upload its data later
+            dds_data1,
+            subresources1
+        );
+
+        D3D12_CPU_DESCRIPTOR_HANDLE cbv_srv_uav_handle1 = cbv_srv_uav_heap->GetCPUDescriptorHandleForHeapStart();
+        cbv_srv_uav_handle1.ptr += render::STATIC_SRV::STONE_GRASS_TEXTURE * device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+        device->CreateShaderResourceView(texture_resource1, nullptr, cbv_srv_uav_handle1);
 
         //create vertex and index buffer
         {
@@ -419,14 +436,24 @@ namespace render {
             );
 
             //texture upload
-            resource_desc.Width = dx12_helper::MyGetRequiredIntermediateSize(texture_resource, 0, (UINT)subresources.size());
+            resource_desc.Width = dx12_helper::MyGetRequiredIntermediateSize(texture_resource0, 0, (UINT)subresources0.size());
             hr = device->CreateCommittedResource(
                 &heap_properties_upload,
                 D3D12_HEAP_FLAG_NONE,
                 &resource_desc,
                 D3D12_RESOURCE_STATE_GENERIC_READ,
                 nullptr,
-                IID_PPV_ARGS(&texture_resource_upload)
+                IID_PPV_ARGS(&texture_resource_upload0)
+            );
+
+            resource_desc.Width = dx12_helper::MyGetRequiredIntermediateSize(texture_resource1, 0, (UINT)subresources1.size());
+            hr = device->CreateCommittedResource(
+                &heap_properties_upload,
+                D3D12_HEAP_FLAG_NONE,
+                &resource_desc,
+                D3D12_RESOURCE_STATE_GENERIC_READ,
+                nullptr,
+                IID_PPV_ARGS(&texture_resource_upload1)
             );
 
             resource_desc.Width = sizeof(DirectX::XMFLOAT4X4);
@@ -519,11 +546,12 @@ namespace render {
             //copy the data from upload to the fast default buffer
             command_list->CopyResource(vertex_buffer, vertex_buffer_upload);
             command_list->CopyResource(index_buffer, index_buffer_upload);
-            dx12_helper::MyUpdateSubresources(command_list, texture_resource, texture_resource_upload, 0, 0, (UINT)subresources.size(), subresources.data());
+            dx12_helper::MyUpdateSubresources(command_list, texture_resource0, texture_resource_upload0, 0, 0, (UINT)subresources0.size(), subresources0.data());
+            dx12_helper::MyUpdateSubresources(command_list, texture_resource1, texture_resource_upload1, 0, 0, (UINT)subresources1.size(), subresources1.data());
 
             //barrier for vertex, index and texture
             {
-                D3D12_RESOURCE_BARRIER barrier[3] = {};
+                D3D12_RESOURCE_BARRIER barrier[4] = {};
                 barrier[0].Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
                 barrier[0].Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
                 barrier[0].Transition.pResource = vertex_buffer;
@@ -540,10 +568,17 @@ namespace render {
 
                 barrier[2].Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
                 barrier[2].Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-                barrier[2].Transition.pResource = texture_resource;
+                barrier[2].Transition.pResource = texture_resource0;
                 barrier[2].Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
                 barrier[2].Transition.StateAfter = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
                 barrier[2].Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+
+                barrier[3].Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+                barrier[3].Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+                barrier[3].Transition.pResource = texture_resource1;
+                barrier[3].Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
+                barrier[3].Transition.StateAfter = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+                barrier[3].Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
 
                 command_list->ResourceBarrier(_countof(barrier), barrier);
             }
@@ -717,6 +752,7 @@ namespace render {
 
             DirectX::XMStoreFloat4x4(&instance_data[instance_count].world_matrix, world_matrix);
             instance_data[instance_count].srv_index = material.srv_index;
+            instance_data[instance_count].uv_scale = material.uv_scale;
 
             instance_count++;
             });

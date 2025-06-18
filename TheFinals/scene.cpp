@@ -8,6 +8,7 @@
 #include "own_model.h"
 #include "material.h"
 #include "static_srv.h"
+#include "filter_group.h"
 
 namespace scene {
     physx::PxShape *ground_shape = nullptr;
@@ -17,11 +18,18 @@ namespace scene {
     void setup(Scene& scene) {
         px_material = physics::g_physics->createMaterial(0.6f, 0.6f, 0.f);
 
+        physx::PxFilterData object_filter_data;
+        object_filter_data.word0 = FilterGroup::Default;
+
         physx::PxBoxGeometry box = physx::PxBoxGeometry(physx::PxVec3(5.0, 0.5, 5.0));
         ground_shape = physics::g_physics->createShape(box, *px_material);
+        ground_shape->setQueryFilterData(object_filter_data); //raycasting
+        ground_shape->setSimulationFilterData(object_filter_data); //simulation
 
         physx::PxBoxGeometry box2 = physx::PxBoxGeometry(physx::PxVec3(0.5, 0.5, 0.5));
         cube_shape = physics::g_physics->createShape(box2, *px_material);
+        cube_shape->setQueryFilterData(object_filter_data); //raycasting
+        cube_shape->setSimulationFilterData(object_filter_data); //simulation
 
         physics::create_scene(&scene.physics_scene, &scene.controller_manager);
 
@@ -38,6 +46,22 @@ namespace scene {
             desc.radius = 0.2;
             desc.position = physx::PxExtendedVec3(0.0, 0.0, 0.0);
             controller.controller = scene.controller_manager->createController(desc);
+
+            physx::PxFilterData player_filter_data;
+            player_filter_data.word0 = FilterGroup::Player; // Set the filter group for the player controller
+
+            //Set the filter layer on the shapes
+            physx::PxU32 num_shapes = controller.controller->getActor()->getNbShapes();
+            physx::PxShape **s = new physx::PxShape * [num_shapes]; //array of pointers
+
+            controller.controller->getActor()->getShapes(s, num_shapes, 0);
+
+            //interate over the shapes and set the filter data
+            for (physx::PxU32 i = 0; i < num_shapes; i++) {
+                s[i]->setQueryFilterData(player_filter_data);
+                s[i]->setSimulationFilterData(player_filter_data);
+            }
+            delete[] s;
                 });
 
         //camera
@@ -59,7 +83,8 @@ namespace scene {
             t.rotation = DirectX::XMFLOAT4(0, 0, 0, 1);
             t.scale = DirectX::XMFLOAT3(10, 1, 10);
 
-            material.srv_index = render::STATIC_SRV::MAIN_TEXTURE;
+            material.srv_index = render::STATIC_SRV::STONE_GRASS_TEXTURE;
+            material.uv_scale = 10.0f;
 
             physx::PxTransform px_transform;
             physics::TransformToPxTransform(t, px_transform);
@@ -79,7 +104,7 @@ namespace scene {
                     t.rotation = DirectX::XMFLOAT4(0, 0, 0, 1);
                     t.scale = DirectX::XMFLOAT3(1, 1, 1);
 
-                    material.srv_index = render::STATIC_SRV::MAIN_TEXTURE;
+                    material.srv_index = render::STATIC_SRV::BRICK_TEXTURE;
 
                     physx::PxTransform px_transform;
                     physics::TransformToPxTransform(t, px_transform);

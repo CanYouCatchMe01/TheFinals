@@ -9,6 +9,7 @@ namespace material {
 
     struct Material {
         int srv_index = -1; //index in the srv heap
+        float uv_scale = 1.0f;
     };
 
     void setup();

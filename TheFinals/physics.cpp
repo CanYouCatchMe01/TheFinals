@@ -24,7 +24,7 @@ namespace physics {
 
 	void PxTransformToTransform(const physx::PxTransform &in_transform, const DirectX::XMFLOAT3 &in_scale, transform::Transform &out_transform) {
 		out_transform.position = DirectX::XMFLOAT3(in_transform.p.x, in_transform.p.y, in_transform.p.z);
-		out_transform.rotation = DirectX::XMFLOAT4(in_transform.q.w, in_transform.q.x, in_transform.q.y, in_transform.q.z);
+		out_transform.rotation = DirectX::XMFLOAT4(in_transform.q.x, in_transform.q.y, in_transform.q.z, in_transform.q.w);
 		out_transform.scale = in_scale;
 	}
 
@@ -32,6 +32,10 @@ namespace physics {
 		physx::PxVec3 pos(in_transform.position.x, in_transform.position.y, in_transform.position.z);
 		physx::PxQuat rot(in_transform.rotation.x, in_transform.rotation.y, in_transform.rotation.z, in_transform.rotation.w);
         out_transform = physx::PxTransform(pos, rot);
+	}
+
+	void Float3ToPxVec3(const DirectX::XMFLOAT3 &in_float3, physx::PxVec3 &out_vec3) {
+		out_vec3 = physx::PxVec3(in_float3.x, in_float3.y, in_float3.z);
 	}
 
 	void PxExtendedVec3ToFloat3(const physx::PxExtendedVec3 &in_ext_vec3, DirectX::XMFLOAT3& out_float3) {
