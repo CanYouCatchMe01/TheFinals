@@ -11,5 +11,7 @@ namespace game {
     extern int mouse_velocity_y;
     extern float delta_time;
 
-    extern std::bitset<256> key_states;
+    bool is_key_held_down(int key);
+    bool is_key_pressed(int key);
+    bool is_key_released(int key);
 }

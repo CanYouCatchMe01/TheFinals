@@ -11,7 +11,7 @@
 
 namespace player {
     void update(scene::Scene &scene) {
-        if (game::key_states[VK_RBUTTON]) {
+        if (game::is_key_held_down(VK_RBUTTON)) {
             // Get the client rect (in client coordinates)
             RECT clientRect;
             GetClientRect(game::hwnd, &clientRect);
@@ -35,8 +35,8 @@ namespace player {
         scene.world.each([&](player::Player &p, transform::Transform &t, physics::Controller &controller) {
             float rotation_speed = 0.01f;
 
-            float mouse_velocity_speed_x = game::key_states[VK_RBUTTON] ? float(game::mouse_velocity_x) * rotation_speed : 0.0f;
-            float mouse_velocity_speed_y = game::key_states[VK_RBUTTON] ? float(game::mouse_velocity_y) * rotation_speed : 0.0f;
+            float mouse_velocity_speed_x = game::is_key_held_down(VK_RBUTTON) ? float(game::mouse_velocity_x) * rotation_speed : 0.0f;
+            float mouse_velocity_speed_y = game::is_key_held_down(VK_RBUTTON) ? float(game::mouse_velocity_y) * rotation_speed : 0.0f;
 
             p.head_rotation_x += mouse_velocity_speed_y;
             p.head_rotation_x = std::clamp(p.head_rotation_x, -DirectX::XM_PIDIV2, DirectX::XM_PIDIV2); //clamp up and down rotation
@@ -48,13 +48,21 @@ namespace player {
             DirectX::XMStoreFloat4(&t.rotation, quat_rot_y); //just set
 
             float y_velocity = p.velocity.y - 9.81f * game::delta_time; // Gravity
+
+            physx::PxControllerState state;
+            controller.controller->getState(state);
+
+            if (game::is_key_pressed(VK_SPACE) && (state.collisionFlags & physx::PxControllerCollisionFlag::eCOLLISION_DOWN)) {
+                y_velocity = 4.0f; // Jump
+            }
+
             //float y_velocity = 0.0f; // Gravity
 
             DirectX::XMFLOAT2 character_velocity = DirectX::XMFLOAT2(0, 0);
-            if (game::key_states['D']) character_velocity.x += 1.0f;
-            if (game::key_states['A']) character_velocity.x -= 1.0f;
-            if (game::key_states['W']) character_velocity.y += 1.0f;
-            if (game::key_states['S']) character_velocity.y -= 1.0f;
+            if (game::is_key_held_down('D')) character_velocity.x += 1.0f;
+            if (game::is_key_held_down('A')) character_velocity.x -= 1.0f;
+            if (game::is_key_held_down('W')) character_velocity.y += 1.0f;
+            if (game::is_key_held_down('S')) character_velocity.y -= 1.0f;
 
             float move_speed = 5.0f * game::delta_time;
             character_velocity.x *= move_speed;

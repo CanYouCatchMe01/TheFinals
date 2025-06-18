@@ -17,6 +17,19 @@ namespace game {
     float delta_time = 0.0f;
 
     std::bitset<256> key_states;
+    std::bitset<256> previous_key_states;
+
+    bool is_key_held_down(int key) {
+        return key_states[key];
+    }
+
+    bool is_key_pressed(int key) {
+        return key_states[key] && !previous_key_states[key];
+    }
+
+    bool is_key_released(int key) {
+        return !key_states[key] && previous_key_states[key];
+    }
 }
 
 bool should_resize = false;
@@ -137,6 +150,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
     while (running) {
         game::mouse_velocity_x = 0;
         game::mouse_velocity_y = 0;
+        game::previous_key_states = game::key_states; // Store previous key states
 
         MSG msg = {};
         while (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE)) {
