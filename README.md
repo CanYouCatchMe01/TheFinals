@@ -7,3 +7,6 @@
  - Walk with WASD keys.
  - Hold the right mouse button to look around.
  - Shoot with the left mouse button.
+ - Press Space key to jump.
+
+ ![image](GitImages/FinalsThumb.png)

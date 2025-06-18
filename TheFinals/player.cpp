@@ -34,7 +34,7 @@ namespace player {
         }
 
         scene.world.each([&](player::Player &p, transform::Transform &t, physics::Controller &controller) {
-            float rotation_speed = 0.01f;
+            float rotation_speed = 0.005f;
 
             float mouse_velocity_speed_x = game::is_key_held_down(VK_RBUTTON) ? float(game::mouse_velocity_x) * rotation_speed : 0.0f;
             float mouse_velocity_speed_y = game::is_key_held_down(VK_RBUTTON) ? float(game::mouse_velocity_y) * rotation_speed : 0.0f;
